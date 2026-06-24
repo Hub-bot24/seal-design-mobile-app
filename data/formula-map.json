@@ -1,0 +1,637 @@
+{
+  "source": "Calculation tab formula extraction",
+  "formulas": [
+    {
+      "address": "T4",
+      "label": "Year Count:",
+      "label_cell": "R4",
+      "formula": "=SUM(2026-T3)",
+      "cached_value": 6,
+      "number_format": ""
+    },
+    {
+      "address": "F5",
+      "label": "",
+      "label_cell": "",
+      "formula": "=INDEX([3]Lookups!$H$34:$H$60,MATCH(1,([3]Lookups!$K$34:$K$60=Calculation!K32)*([3]Lookups!$N$34:$N$60=Calculation!N32)*([3]Lookups!$P$34:$P$60=Calculation!P32),0))",
+      "cached_value": "#N/A",
+      "number_format": ""
+    },
+    {
+      "address": "X5",
+      "label": "AADT",
+      "label_cell": "R5",
+      "formula": "=SUM(100%-N5)",
+      "cached_value": 0.5,
+      "number_format": "0.0%"
+    },
+    {
+      "address": "J7",
+      "label": "AADT (Calculated)",
+      "label_cell": "H7",
+      "formula": "=ROUND(((J5*260)+(J6*105))/365,0)",
+      "cached_value": 1307,
+      "number_format": ""
+    },
+    {
+      "address": "O7",
+      "label": "LV",
+      "label_cell": "N7",
+      "formula": "=T5-O8-O9",
+      "cached_value": 853,
+      "number_format": "0.0"
+    },
+    {
+      "address": "Y7",
+      "label": "LV",
+      "label_cell": "X7",
+      "formula": "=SUM(R8*U12)*X5",
+      "cached_value": 494.60924286779766,
+      "number_format": ""
+    },
+    {
+      "address": "O8",
+      "label": "SHV",
+      "label_cell": "N8",
+      "formula": "=SUM(R8*U13)*N5",
+      "cached_value": 0,
+      "number_format": "0.0"
+    },
+    {
+      "address": "R8",
+      "label": "SHV",
+      "label_cell": "N8",
+      "formula": "=T5*(1+T6)^T4",
+      "cached_value": 989.2184857355953,
+      "number_format": ""
+    },
+    {
+      "address": "Y8",
+      "label": "SHV",
+      "label_cell": "X8",
+      "formula": "=SUM(R8*U13)*X5",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "AQ8",
+      "label": "Conventional Seal",
+      "label_cell": "AO8",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(K32,$AM$7:$AO$7,$AM$8:$AO$21),,TRUE)",
+      "cached_value": "Conventional Seal",
+      "number_format": ""
+    },
+    {
+      "address": "O9",
+      "label": "LHV",
+      "label_cell": "N9",
+      "formula": "=SUM(R8*N5)*U14",
+      "cached_value": 0,
+      "number_format": "0.0"
+    },
+    {
+      "address": "Y9",
+      "label": "LHV",
+      "label_cell": "X9",
+      "formula": "=SUM(R8*U14)*X5",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "N12",
+      "label": "v/l/d",
+      "label_cell": "N11",
+      "formula": "=SUM(R8*N5)",
+      "cached_value": 494.60924286779766,
+      "number_format": ""
+    },
+    {
+      "address": "U12",
+      "label": "LV",
+      "label_cell": "R12",
+      "formula": "=100%-U13-U14",
+      "cached_value": 1,
+      "number_format": "0.0%"
+    },
+    {
+      "address": "X12",
+      "label": "LV",
+      "label_cell": "R12",
+      "formula": "=SUM(R8*X5)",
+      "cached_value": 494.60924286779766,
+      "number_format": ""
+    },
+    {
+      "address": "A14",
+      "label": "",
+      "label_cell": "",
+      "formula": "=IFERROR(\n  _xlfn.XLOOKUP(\n    1,\n    ([3]Lookups!$B$2:$B$1000=Calculation!K32)*\n    ([3]Lookups!$C$2:$C$1000=Calculation!N32)*\n    ([3]Lookups!$D$2:$D$1000=Calculation!P32),\n    [3]Lookups!$E$2:$E$1000\n  ),\n  \"\"\n)",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "H16",
+      "label": "v/l/d",
+      "label_cell": "F16",
+      "formula": "=N12",
+      "cached_value": 494.60924286779766,
+      "number_format": ""
+    },
+    {
+      "address": "N16",
+      "label": "EHV (%",
+      "label_cell": "N14",
+      "formula": "=IFERROR((O8/N12)+(O9/N12*3),\"N/A\")",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "AG16",
+      "label": "v/l/d",
+      "label_cell": "AF16",
+      "formula": "=X12",
+      "cached_value": 494.60924286779766,
+      "number_format": ""
+    },
+    {
+      "address": "H19",
+      "label": "Vf",
+      "label_cell": "F19",
+      "formula": "=IF(H16=\"\",\"\",\n IF(OR(K32=\"single\",K32=\"Armour coat\"),\n    IF(H16<=110,0.388*110^(-0.1304),\n       IF(H16<=500,0.388*H16^(-0.1304),0.3687*H16^(-0.1226))\n    ),\n IF(K32=\"double 2nd coat\",\n    IF(H16<=110,0.388*110^(-0.1304),\n       IF(H16<=500,0.388*H16^(-0.1304),0.3687*H16^(-0.1226))\n    ),\n IF(K32=\"double 1st coat\",\n    ROUND(IF(H16<=500,0.2359*H16^(-0.084),0.2385*H16^(-0.086)),3),\n \"\"\n ))))",
+      "cached_value": 0.14,
+      "number_format": "0.000"
+    },
+    {
+      "address": "AG19",
+      "label": "Vf",
+      "label_cell": "AE19",
+      "formula": "=IF(U32=\"single\",IF(AG16=\"\",\"\",(IF(AG16<=110,0.388*110^(-0.1304),IF(AG16<=500,0.388*AG16^(-0.1304),0.3687*AG16^-0.1226)))),IF(U32=\"double 2nd coat\",IF(AG16=\"\",\"\",(IF(AG16<=110,0.388*110^(-0.1304),IF(AG16<=500,0.388*AG16^(-0.1304),0.3687*AG16^-0.1226)))),(IF(U32=\"double 1st coat\",(ROUND(IF(AG16<=500,0.2359*AG16^(-0.084),0.2385*AG16^-0.086),3))))))",
+      "cached_value": 0.17278257063200295,
+      "number_format": "0.000"
+    },
+    {
+      "address": "A20",
+      "label": "",
+      "label_cell": "",
+      "formula": "=OR($N$32=\"HaTelit\",$K$32=\"Double 2nd Coat\",$K$26=\"N/A\",$N$32=\"HUESKER Chipseal Grid A10\",$N$32=\"HUESKER Chipseal Grid A15\")",
+      "cached_value": true,
+      "number_format": ""
+    },
+    {
+      "address": "H21",
+      "label": "L/m²/mm",
+      "label_cell": "G21",
+      "formula": "=IF(P38>35,\"Cant Use\",IF(P38<10,\"0.02\",IF(AND(P38>25,P38<36),\"-0.01\",IF(AND(P38>15,P38<26),\"0\",IF(AND(P38>9,P38<16),\"0.01\")))))",
+      "cached_value": "0",
+      "number_format": ""
+    },
+    {
+      "address": "AG21",
+      "label": "L/m²/mm",
+      "label_cell": "AF21",
+      "formula": "=IF(Z38>35,\"Cant Use\",IF(Z38<10,\"0.02\",IF(AND(Z38>25,Z38<36),\"-0.01\",IF(AND(Z38>15,Z38<26),\"0\",IF(AND(Z38>9,Z38<16),\"0.01\")))))",
+      "cached_value": "0.01",
+      "number_format": ""
+    },
+    {
+      "address": "H22",
+      "label": "L/m²/mm",
+      "label_cell": "G22",
+      "formula": "=IF(AND(N16>=0%,N16<15%,K45=\"Flat or Downhill\",N45=\"No\"),\"0\",\nIF(AND(N16>=0%,N16<15%,K45=\"Flat or Downhill\",N45=\"Yes\"),\"-0.01\",\nIF(AND(N16>=15%,N16<=25%,K45=\"Flat or Downhill\",N45=\"No\"),\"-0.01\",\nIF(AND(N16>=15%,N16<=25%,K45=\"Flat or Downhill\",N45=\"Yes\"),\"-0.02\",\nIF(AND(N16>=26%,N16<=45%,K45=\"Flat or Downhill\",N45=\"No\"),\"-0.02\",\nIF(AND(N16>=26%,N16<=45%,K45=\"Flat or Downhill\",N45=\"yes\"),\"-0.03\",\nIF(AND(N16>=46%,N16<=65%,K45=\"Flat or Downhill\",N45=\"No\"),\"-0.03\",\nIF(AND(N16>=46%,N16<=65%,K45=\"Flat or Downhill\",N45=\"yes\"),\"-0.04\",\nIF(AND(N16>65%,K45=\"Flat or Downhill\",N45=\"No\"),\"0\",\nIF(AND(N16>65%,K45=\"Flat or Downhill\",N45=\"Yes\"),\"0\",\nIF(AND(N16>=0%,N16<15%,K45=\"Slow moving - Climbing Lanes\",N45=\"No\"),\"-0.01\",\nIF(AND(N16>=0%,N16<15%,K45=\"Slow moving - Climbing Lanes\",N45=\"Yes\"),\"-0.02\",\nIF(AND(N16>=15%,N16<=25%,K45=\"Slow moving - Climbing Lanes\",N45=\"No\"),\"-0.02\",\nIF(AND(N16>=15%,N16<=25%,K45=\"Slow moving - Climbing Lanes\",N45=\"yes\"),\"-0.03\",\nIF(AND(N16>25%,N16<=45%,K45=\"Flat or Downhill\",N45=\"No\"),\"-0.02\",\nIF(AND(N16>25%,N16<=45%,K45=\"Flat or Downhill\",N45=\"YES\"),\"-0.03\",\nIF(AND(N16>25%,N16<=45%,K45=\"Slow moving - Climbing Lanes\",N45=\"No\"),\"-0.04\",\nIF(AND(N16>25%,N16<=45%,K45=\"Slow moving - Climbing Lanes\",N45=\"yes\"),\"-0.04\",\nIF(AND(N16>=46%,N16<=65%,K45=\"Slow moving - Climbing Lanes\",N45=\"No\"),\"-0.04\",\nIF(AND(N16>=46%,N16<=65%,K45=\"Slow moving - Climbing Lanes\",N45=\"yes\"),\"-0.05\",\nIF(AND(N16>65%,K45=\"Slow moving - Climbing Lanes\",N45=\"Yes\"),\"0\",\nIF(AND(N16>65%,K45=\"Slow moving - Climbing Lanes\",N45=\"no\"),\"0\"))))))))))))))))))))))",
+      "cached_value": "0",
+      "number_format": ""
+    },
+    {
+      "address": "AG22",
+      "label": "L/m²/mm",
+      "label_cell": "AF22",
+      "formula": "=IF(AND(X16>=0%,X16<=15%,U45=\"Flat or Downhill\",X45=\"No\"),\"0\",IF(AND(X16>=0%,X16<=15%,U45=\"Flat or Downhill\",X45=\"Yes\"),\"-0.01\",IF(AND(X16>=16%,X16<=25%,U45=\"Flat or Downhill\",X45=\"No\"),\"-0.01\",IF(AND(X16>=16%,X16<=25%,U45=\"Flat or Downhill\",X45=\"Yes\"),\"-0.02\",IF(AND(X16>=26%,X16<=45%,U45=\"Flat or Downhill\",X45=\"No\"),\"-0.02\",IF(AND(X16>=26%,X16<=45%,U45=\"Flat or Downhill\",X45=\"yes\"),\"-0.03\",IF(AND(X16>=46%,X16<=65%,U45=\"Flat or Downhill\",X45=\"No\"),\"-0.03\",IF(AND(X16>=46%,X16<=65%,U45=\"Flat or Downhill\",X45=\"yes\"),\"-0.04\",IF(AND(X16>65%,U45=\"Flat or Downhill\",X45=\"No\"),\"0\",IF(AND(X16>65%,U45=\"Flat or Downhill\",X45=\"Yes\"),\"0\",IF(AND(X16>=0%,X16<=15%,U45=\"Slow moving - Climbing Lanes\",X45=\"No\"),\"-0.01\",IF(AND(X16>=0%,X16<=15%,U45=\"Slow moving - Climbing Lanes\",X45=\"Yes\"),\"-0.02\",IF(AND(X16>=16%,X16<=25%,U45=\"Slow moving - Climbing Lanes\",X45=\"No\"),\"-0.02\",IF(AND(X16>=16%,X16<=25%,U45=\"Slow moving - Climbing Lanes\",X45=\"yes\"),\"-0.03\",IF(AND(X16>=26%,X16<=45%,U45=\"Slow moving - Climbing Lanes\",X45=\"No\"),\"-0.03\",IF(AND(X16>=26%,X16<=45%,U45=\"Slow moving - Climbing Lanes\",X45=\"No\"),\"-0.04\",IF(AND(X16>=26%,X16<=45%,U45=\"Slow moving - Climbing Lanes\",X45=\"yes\"),\"-0.04\",IF(AND(X16>=46%,X16<=65%,U45=\"Slow moving - Climbing Lanes\",X45=\"No\"),\"-0.04\",IF(AND(X16>=46%,X16<=65%,U45=\"Slow moving - Climbing Lanes\",X45=\"yes\"),\"-0.05\",IF(AND(X16>65%,U45=\"Slow moving - Climbing Lanes\",X45=\"Yes\"),\"0\",IF(AND(X16>65%,U45=\"Slow moving - Climbing Lanes\",X45=\"no\"),\"0\")))))))))))))))))))))",
+      "cached_value": "0",
+      "number_format": ""
+    },
+    {
+      "address": "A25",
+      "label": "",
+      "label_cell": "",
+      "formula": "=IF(OR($N$32=\"HaTelit\",$K$32=\"Double 2nd Coat\",$K$26=\"N/A\",$N$32=\"HUESKER Chipseal Grid A10\",$N$32=\"HUESKER Chipseal Grid A15\"),\n0,\nSUMIFS(\nLookupsTbl[E_num],\nLookupsTbl[KeyA], UPPER(TRIM($K$26)),\nLookupsTbl[KeyB], UPPER(TRIM($K$38)),\nLookupsTbl[C (Min Sand Patch)], \"<=\" & N($K$26),\nLookupsTbl[D (Max Sand Patch)], \">=\" & N($K$26)\n))",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "H25",
+      "label": "L/m²/mm",
+      "label_cell": "G25",
+      "formula": "=IF(OR(N32=\"SAMI\",N32=\"Interlayer Bond Waterproofing\",N32=\"Bridge Deck Waterproofing\"),0.17,SUM(H19+H21+H22+H23))",
+      "cached_value": 0.14,
+      "number_format": "0.000"
+    },
+    {
+      "address": "AG25",
+      "label": "L/m²/mm",
+      "label_cell": "AF25",
+      "formula": "=IF(AM32=\"SAMI\",\"0.17\",SUM(AG19+AG21+AG22+AG23))",
+      "cached_value": 0.18278257063200296,
+      "number_format": "0.000"
+    },
+    {
+      "address": "H27",
+      "label": "mm",
+      "label_cell": "G27",
+      "formula": "=N38",
+      "cached_value": 5.7,
+      "number_format": ""
+    },
+    {
+      "address": "AG27",
+      "label": "mm",
+      "label_cell": "AF27",
+      "formula": "=X38",
+      "cached_value": 4,
+      "number_format": ""
+    },
+    {
+      "address": "A28",
+      "label": "",
+      "label_cell": "",
+      "formula": "=IFERROR(\nINDEX([3]Lookups!$E:$E,\nMATCH(1,\n([3]Lookups!$B:$B=K32)*\n([3]Lookups!$C:$C=N32)*\n([3]Lookups!$D:$D=P32),\n0)\n),\n\"\")",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "H29",
+      "label": "L/m²",
+      "label_cell": "G29",
+      "formula": "=SUM(H25*H27)",
+      "cached_value": 0.7980000000000002,
+      "number_format": ""
+    },
+    {
+      "address": "AG29",
+      "label": "L/m²",
+      "label_cell": "AF29",
+      "formula": "=SUM(AG25*AG27)",
+      "cached_value": 0.7311302825280118,
+      "number_format": ""
+    },
+    {
+      "address": "H31",
+      "label": "BF",
+      "label_cell": "F31",
+      "formula": "=IFERROR(IF(SUMIFS(LUT_Factors[BF_Result],LUT_Factors[BF_Type],K32,LUT_Factors[BF_Treatment],N32,LUT_Factors[BF_Binder],P32)=0,\"Select Binder\",SUMIFS(LUT_Factors[BF_Result],LUT_Factors[BF_Type],K32,LUT_Factors[BF_Treatment],N32,LUT_Factors[BF_Binder],P32)),\"Select Binder\")",
+      "cached_value": 1.1,
+      "number_format": ""
+    },
+    {
+      "address": "AG31",
+      "label": "BF",
+      "label_cell": "AE31",
+      "formula": "=IF(LEN(TRIM($Z$32))=0,\"Select Product\",\nIF(X32=\"Waterproofing\",1.3,\nIF(AND(X32=\"Conventional Seal\",Z32=\"C170\"),1,\nIF(AND(X32=\"Conventional Seal\",Z32=\"C240\"),1,\nIF(AND(X32=\"Conventional Seal\",Z32=\"C320\"),1,\nIF(AND(X32=\"Conventional Seal\",Z32=\"M500\"),1.1,\nIF(AND(X32=\"Unmodified Emulsion Seal\",Z32=\"Emulsion(≥67%)\"),1.1,\nIF(AND(X32=\"Unmodified Emulsion Seal\",Z32=\"Emulsion(60%)\"),1,\nIF(AND(X32=\"Unmodified Emulsion Seal\",Z32=\"Emulsion(≥67%)-Under Asphalt\"),1.1,\nIF(AND(X32=\"Unmodified Emulsion Seal\",Z32=\"Emulsion(60%)-Under Asphalt\"),1,\nIF(AND(X32=\"Aggregate retention(AR)\",Z32=\"S35E\"),1,\nIF(AND(X32=\"Aggregate retention(AR)\",Z32=\"S10E\"),1.1,\nIF(AND(X32=\"HSS1-M\",Z32=\"S10E\"),1,\nIF(AND(X32=\"HSS1-M\",Z32=\"S35E\"),1,\nIF(AND(X32=\"HSS1-H\",Z32=\"S15E\"),1,\nIF(AND(X32=\"HSS1-M\",Z32=\"S45R\"),1.1,\nIF(AND(X32=\"HSS1-M\",Z32=\"S15RF\"),1.1,\nIF(AND(X32=\"HSS2-H\",Z32=\"S20E\"),1.1,\nIF(AND(X32=\"HSS2-H\",Z32=\"S45R\"),1.1,\nIF(AND(X32=\"HSS2-H\",Z32=\"S15RF\"),1.1,\nIF(AND(X32=\"HSS2-H\",Z32=\"S15E\"),1.1,\nIF(AND(X32=\"SAMI\",Z32=\"S25E\"),1.6,\nIF(AND(X32=\"HSS2-M\",Z32=\"S10E\"),1,\nIF(AND(X32=\"HSS2-M\",Z32=\"S35E\"),1,\nIF(AND(X32=\"HSS2-H\",Z32=\"S15E\"),1,\nIF(AND(U32=\"Single\",X32=\"SAM-S\",Z32=\"S10E\"),1.2,\nIF(AND(U32=\"Single\",X32=\"SAM-S\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Single\",X32=\"SAM-S\",Z32=\"S35E\"),1.2,\nIF(AND(U32=\"Single\",X32=\"SAM-S\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Single\",X32=\"SAM-S\",Z32=\"S15RF\"),1.3,\nIF(AND(U32=\"Single\",X32=\"SAM-R\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Single\",X32=\"SAM-R\",Z32=\"S20E\"),1.3,\nIF(AND(U32=\"Single\",X32=\"SAM-R\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Single\",X32=\"SAM-R\",Z32=\"S15RF\"),1.3,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-S\",Z32=\"S10E\"),1.2,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-S\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-S\",Z32=\"S35E\"),1.2,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-S\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-S\",Z32=\"S15RF\"),1.3,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-R\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-R\",Z32=\"S20E\"),1.3,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-R\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Double 1st Coat\",X32=\"SAM-R\",Z32=\"S15RF\"),1.3,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-S\",Z32=\"S10E\"),1.2,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-S\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-S\",Z32=\"S35E\"),1.2,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-S\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-S\",Z32=\"S15RF\"),1.3,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-R\",Z32=\"S15E\"),1.2,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-R\",Z32=\"S20E\"),1.3,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-R\",Z32=\"S45R\"),1.3,\nIF(AND(U32=\"Double 2nd Coat\",X32=\"SAM-R\",Z32=\"S15RF\"),1.3,\nIF(AND(X32=\"SAMI\",Z32=\"S18RF\"),1.6,\nIF(AND(X32=\"Primer Seal\",Z32=\"AMC5\"),1,\nIF(AND(X32=\"Primer Seal\",Z32=\"AMC6\"),1,\nIF(AND(X32=\"Primer Seal\",Z32=\"AMC7\"),1,\nIF(AND(X32=\"HaTelit\",Z32=\"C170\"),1,\n)))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
+      "cached_value": 0,
+      "number_format": "0.0"
+    },
+    {
+      "address": "H33",
+      "label": "L/m²",
+      "label_cell": "G33",
+      "formula": "=SUM(H29*H31)",
+      "cached_value": 0.8778000000000002,
+      "number_format": ""
+    },
+    {
+      "address": "AG33",
+      "label": "L/m²",
+      "label_cell": "AF33",
+      "formula": "=SUM(AG29*AG31)",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "A35",
+      "label": "",
+      "label_cell": "",
+      "formula": "=1+1",
+      "cached_value": 2,
+      "number_format": ""
+    },
+    {
+      "address": "H36",
+      "label": "L/m²",
+      "label_cell": "G36",
+      "formula": "=IF(OR($N$32=\"HaTelit\",$K$32=\"Double 2nd Coat\",$K$26=\"N/A\",$N$32=\"HUESKER Chipseal Grid A10\",$N$32=\"HUESKER Chipseal Grid A15\"),\"\",\nIF(ISNUMBER(MATCH($K$26,{\"Granular\",\"Foamed bitumen\",\"Primed\",\"Primer Seal\",\"Bridge deck\"},0)),0,\nINDEX(LookupsTbl[E (Value)],\nMATCH(1,\n(LookupsTbl[KeyA]=UPPER(TRIM($K$26)))*\n(LookupsTbl[KeyB]=UPPER(TRIM($K$38)))*\n(LookupsTbl[C (Min Sand Patch)]<=N($N$26))*\n(LookupsTbl[D (Max Sand Patch)]>=N($N$26)),\n0))))",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "AG36",
+      "label": "L/m²",
+      "label_cell": "AF36",
+      "formula": "=IF(OR(X32=\"HaTelit\", U32=\"Double 2nd Coat\"),\n    0,\n    INDEX([2]Lookups!$E$2:$E$100,\n        MATCH(1,\n            ([2]Lookups!$A$2:$A$100=U26) *\n            ([2]Lookups!$B$2:$B$100=U38) *\n            (X26>=[2]Lookups!$C$2:$C$100) *\n            (X26<=[2]Lookups!$D$2:$D$100),\n        0)\n    )\n)",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "H39",
+      "label": "L/m131",
+      "label_cell": "G39",
+      "formula": "=IF(AND(N12>=0,N12<=1200,P26=1),0,\nIF(AND(N12>=1200,N12<=2600,P26=1),-0.1,\nIF(AND(N12>=2600,N12<=9500,P26=1),-0.2,\nIF(AND(N12>=9500,N12<=10000,P26=1),-0.3,\nIF(AND(N12>=0,N12<=800,P26=2),0,\nIF(AND(N12>=800,N12<=1800,P26=2),-0.1,\nIF(AND(N12>=1800,N12<=4200,P26=2),-0.2,\nIF(AND(N12>=4200,N12<=10000,P26=2),-0.3,\nIF(AND(N12>=0,N12<=400,P26=3),0,\nIF(AND(N12>=400,N12<=1400,P26=3),-0.1,\nIF(AND(N12>=1400,N12<=2600,P26=3),-0.2,\nIF(AND(N12>=2600,N12<=10000,P26=3),-0.3,\nIF(P26=\"N/A\",0,\nIF(P26=\">3\",\"NOTE\",0))))))))))))))",
+      "cached_value": 0,
+      "number_format": "0.0"
+    },
+    {
+      "address": "AG39",
+      "label": "L/m131",
+      "label_cell": "AF39",
+      "formula": "=IF(AND(X12>=0,X12<=1200,Z26=1),\"0\",IF(AND(X12>=1200,X12<=2600,Z26=1),\"-0.1\",IF(AND(X12>=2600,X12<=9500,Z26=1),\"-0.2\",IF(AND(X12>=9500,X12<=10000,Z26=1),\"-0.3\",IF(AND(X12>=0,X12<=800,Z26=2),\"0\",IF(AND(X12>=800,X12<=1800,Z26=2),\"-0.1\",IF(AND(X12>=1800,X12<=4200,Z26=2),\"-0.2\",IF(AND(X12>=4200,X12<=10000,Z26=2),\"-0.3\",IF(AND(X12>=0,X12<=400,Z26=3),\"0\",IF(AND(X12>=400,X12<=1400,Z26=3),\"-0.1\",IF(AND(X12>=1400,X12<=2600,Z26=3),\"-0.2\",IF(AND(X12>=2600,X12<=10000,Z26=3),\"-0.3\",IF(Z26=\"N/A\",0,IF(Z26=\">3\",\"NOTE\"))))))))))))))",
+      "cached_value": 0,
+      "number_format": "0.0"
+    },
+    {
+      "address": "BJ39",
+      "label": ".HSS1-M",
+      "label_cell": "BI39",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BM39",
+      "label": ".HSS1-M",
+      "label_cell": "BI39",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(K20,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#VALUE!",
+      "number_format": ""
+    },
+    {
+      "address": "BN39",
+      "label": ".HSS1-M",
+      "label_cell": "BI39",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BT39",
+      "label": "Filterd List",
+      "label_cell": "BT38",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BU39",
+      "label": "Filterd List",
+      "label_cell": "BU38",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BV39",
+      "label": "Filterd List",
+      "label_cell": "BV38",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BH$38:$BI$38,$BH$39:$BI$60),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "H40",
+      "label": "L/m131",
+      "label_cell": "G39",
+      "formula": "=IF(AND(N32=\"HaTelit\",P32=\"C170\"),\"Initial Tack Coat Spray Rate\",IF(AND(N32=\"HUESKER Chipseal Grid A10\",P32=\"C170\"),\"Initial Tack Coat Spray Rate\",IF(AND(N32=\"HUESKER Chipseal Grid A15\",P32=\"C170\"),\"Initial Tack Coat Spray Rate\",\"\")))",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "G41",
+      "label": "L/m131",
+      "label_cell": "G39",
+      "formula": "=IF(N32=\"HaTelit\",\"Absorption\",\"\")",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "A42",
+      "label": "",
+      "label_cell": "",
+      "formula": "=INDEX(LookupsTbl[E (Value)],1)",
+      "cached_value": "Note 1",
+      "number_format": ""
+    },
+    {
+      "address": "H42",
+      "label": "NOT Profiled asphalt",
+      "label_cell": "G42",
+      "formula": "=IF(P32=\"C170\",\n    IF(N32=\"HaTelit\",\n        MROUND(\n            MIN(\n                IF(N26<0.4,0.55,IF(N26<0.8,0.65,0.8)),\n                MAX(\n                    IF(N26<0.4,0.45,IF(N26<0.8,0.55,0.55)),\n                    IF(N26<0.4,0.5,IF(N26<0.8,0.6,0.75)) +\n                    _xlfn.XLOOKUP(G42,{\"Low\",\"Medium\",\"High\"},{-0.05,0,0.05},0)\n                )\n            ),\n            0.01\n        ),\n        IF(OR(N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\"),\n           _xlfn.LET(_xlpm.sp,MIN(MAX(N26,0),1.7),\n               IF(_xlpm.sp<=0.5,0.5,IF(_xlpm.sp<=1.1,0.6,0.7))\n           ),\n           IF(N32=\"HUESKER Chipseal Grid\",0.6,\"\")\n        )\n    ),\n    \"\"\n)",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "BH42",
+      "label": "AGPT04K-18",
+      "label_cell": "BH38",
+      "formula": "=A:AV",
+      "cached_value": "#VALUE!",
+      "number_format": ""
+    },
+    {
+      "address": "H43",
+      "label": "L/m²",
+      "label_cell": "G43",
+      "formula": "=IF(AND(N32=\"waterproofing\",P32=\"S25E\",K32=\"Armour coat\",K38=\"10mm\",K26=\"Bridge deck \"),1.5,\nIF(AND(N32=\"HUESKER Chipseal Grid A10\",P32=\"C170\"),(1-H42)+H33+H36+H37+H38+H39,\nIF(AND(N32=\"HUESKER Chipseal Grid A15\",P32=\"C170\"),(1.1-H42)+H33+H36+H37+H38+H39,\nIF(AND(P32=\"Emulsion(60%)-Under Asphalt\",K38=\"10mm\"),1.2,\nIF(AND(P32=\"Emulsion(≥67%)-Under Asphalt\",K38=\"10mm\"),1.1,\nIF(AND(P32=\"Emulsion(60%)-Under Asphalt\",K38=\"5 & 7mm\"),1,\nIF(AND(P32=\"Emulsion(≥67%)-Under Asphalt\",K38=\"5 & 7mm\"),0.9,\nIF(ISNUMBER(SEARCH(\"67%\",P32)),SUM(H33:H39)/0.67,\nIF(ISNUMBER(SEARCH(\"60%\",P32)),SUM(H33:H39)/0.6,\nSUM(H33:H39))))))))))",
+      "cached_value": 0.8778000000000002,
+      "number_format": ""
+    },
+    {
+      "address": "AG43",
+      "label": "L/m²",
+      "label_cell": "AF43",
+      "formula": "=SUM(AG33+AG36+AG37+AG38+AG39)",
+      "cached_value": 0,
+      "number_format": ""
+    },
+    {
+      "address": "B44",
+      "label": "",
+      "label_cell": "",
+      "formula": "=ISNUMBER(H39)",
+      "cached_value": true,
+      "number_format": ""
+    },
+    {
+      "address": "H45",
+      "label": "m2/m3",
+      "label_cell": "F45",
+      "formula": "=IF(AND(N32=\"SAMI\",K32=\"Single\",K20=\"AGPT04K-18\"),1000,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Interlayer Bond Waterproofing\"),1000,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"HSS1-M\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"HSS1-H\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Armour coat\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Bridge Deck Waterproofing\"),1000,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Unmodified Emulsion Seal\"),800,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"SAM-R\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"SAM-S\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Aggregate retention(AR)\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Hi-Float Emulsion\"),800,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Primer Seal\"),800,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC5\"),800,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"c170\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"c240\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"c320\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"M500\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC6\"),900,IF(AND(K32=\"single\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC7\"),900,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Unmodified Emulsion Seal\"),850,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Primer Seal\"),850,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC5\"),850,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"C170\"),950,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"C240\"),950,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"C320\"),950,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"M500\"),950,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC6\"),950,IF(AND(K32=\"Double 1st coat\",K20=\"AGPT04K-18\",N32=\"Conventional Seal\",P32=\"AMC7\"),950,IF(K32=\"Double 2nd coat\",900,\"950\")))))))))))))))))))))))))))))",
+      "cached_value": "950",
+      "number_format": ""
+    },
+    {
+      "address": "AG45",
+      "label": "m2/m3",
+      "label_cell": "AE45",
+      "formula": "=IF(AND(X32=\"SAMI\",U32=\"Single\",X20=\"AGPT04K-18\"),1000,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"HSS1-M\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"HSS1-H\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Unmodified Emulsion Seal\"),800,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"SAM-R\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"SAM-S\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Aggregate retention(AR)\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Hi-Float Emulsion\"),800,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Primer Seal\"),800,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC5\"),800,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"c170\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"c240\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"c320\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"M500\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC6\"),900,IF(AND(U32=\"single\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC7\"),900,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Unmodified Emulsion Seal\"),850,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Primer Seal\"),850,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC5\"),850,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"C170\"),950,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"C240\"),950,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"C320\"),950,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"M500\"),950,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC6\"),950,IF(AND(U32=\"Double 1st coat\",X20=\"AGPT04K-18\",X32=\"Conventional Seal\",Z32=\"AMC7\"),950,IF(U32=\"Double 2nd coat\",900,\"950\"))))))))))))))))))))))))))",
+      "cached_value": 900,
+      "number_format": ""
+    },
+    {
+      "address": "H46",
+      "label": "m2/m3",
+      "label_cell": "F45",
+      "formula": "=IF(AND(K38=\"10mm\",OR(P32=\"Emulsion(60%)-Under Asphalt\",P32=\"Emulsion(≥67%)-Under Asphalt\")),\n     140,\n     IF(AND(K38=\"5 & 7mm\",OR(P32=\"Emulsion(60%)-Under Asphalt\",P32=\"Emulsion(≥67%)-Under Asphalt\")),\n        170,\n        H45/H27\n     )\n)",
+      "cached_value": 166.66666666666666,
+      "number_format": "0_ ;\\-0\\ "
+    },
+    {
+      "address": "AG46",
+      "label": "m2/m3",
+      "label_cell": "AE45",
+      "formula": "=SUM(AG45/AG27)",
+      "cached_value": 225,
+      "number_format": "0;\\-0;;@"
+    },
+    {
+      "address": "A52",
+      "label": "",
+      "label_cell": "",
+      "formula": "=ROWS(LookupsTbl[])",
+      "cached_value": 117,
+      "number_format": ""
+    },
+    {
+      "address": "E55",
+      "label": "NOTES:",
+      "label_cell": "D53",
+      "formula": "=IF(OR(N32=\"SAM-S\",N32=\"SAM-R\"),\n  \"SAM – preferred SAM is an S/S (14 or 10 mm) but a D/D may be required where there are also high-stress conditions\",\n  IF(N32=\"Geotextile\",\n    \"Bond coat application rates typically vary between 0.4 and 0.8 L/m2 depending on surface texture and weather conditions. In warm to hot conditions, the top end of this application rate may lead to excessive application rates and binder pickup.\",\n    IF(N32=\"HaTelit\",\n      \"The tack coat for the HaTelit C must be applied at a starting spray rate of:\" & CHAR(10) &\n      \"– 0.45 to 0.55 L/m2 of residual bitumen on brand new (warm) asphalt surfaces;\" & CHAR(10) &\n      \"– 0.45 to 0.55 L/m2 of residual bitumen on asphalt surfaces that have not been cold planed;\" & CHAR(10) &\n      \"– 0.55 to 0.65 L/m2 of residual bitumen on asphalt surfaces that have been cold planed.\",\n      IF(N32=\"HUESKER Chipseal Grid A10\",\n        \"Bond Coat - 0.5 - 0.7 L/m2, Overall bitumen (including Bond Coat) Residual bitumen - 0.9 - 1.1 L/m2\",\n        IF(N32=\"HUESKER Chipseal Grid A15\",\n          \"Bond Coat - 0.5 - 0.7 L/m2, Overall bitumen (including Bond Coat) Residual bitumen - 1.0 - 1.2 L/m2\",\n          \"\"\n        )\n      )\n    )\n  )\n)\n&\nIF(H36=\"Note 1\",IF(OR(N32=\"SAM-S\",N32=\"SAM-R\",N32=\"Geotextile\",N32=\"HaTelit\",N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\"),CHAR(10)&CHAR(10),\"\")&\"NOTE 1  Embedment considerations dominant.\",\nIF(H36=\"Note 2\",IF(OR(N32=\"SAM-S\",N32=\"SAM-R\",N32=\"Geotextile\",N32=\"HaTelit\",N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\"),CHAR(10)&CHAR(10),\"\")&\"NOTE 2  Specialised treatments necessary.\",\nIF(H36=\"Note 3\",IF(OR(N32=\"SAM-S\",N32=\"SAM-R\",N32=\"Geotextile\",N32=\"HaTelit\",N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\"),CHAR(10)&CHAR(10),\"\")&\"NOTE 3: This treatment might not be advisable depending on the shape and interlock of aggregates so alternative treatments (surface enrichment, smaller size seal or others) should be considered.\",\nIF(H36=\"Note 4\",IF(OR(N32=\"SAM-S\",N32=\"SAM-R\",N32=\"Geotextile\",N32=\"HaTelit\",N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\"),CHAR(10)&CHAR(10),\"\")&\"NOTE 4  For application of aggregate sizes greater than 14 mm, adopt allowances applicable to 14 mm aggregate.\",\"\"))))",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "E58",
+      "label": "",
+      "label_cell": "",
+      "formula": "=IF(OR(N32=\"HUESKER Chipseal Grid A10\",N32=\"HUESKER Chipseal Grid A15\",N32=\"HaTelit\"),\n  \"No texture used for Design binder rate - due the fibre overlying exsisting texture\",\n  IF(N32=\"SAM-S\",\"Minimum binder rate for SAM application is 1.5 L/m2.\",\n     IF(N32=\"SAM-R\",\"Minimum binder rate for SAM application is 1.5 L/m2.\",\"\")\n  )\n)",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "E60",
+      "label": "",
+      "label_cell": "",
+      "formula": "=IF(AND($N$32=\"HaTelit\",$P$32=\"C170\"),\n \"Absorption (G40) – Default: MEDIUM.\" & CHAR(10) &\n \"Use LOW for smoother/tight surfaces or warmer conditions (avoid flushing).\" & CHAR(10) &\n \"Use HIGH for coarser/open texture, colder/windy conditions, or where extra adhesion is desired.\",\n \"\")",
+      "cached_value": null,
+      "number_format": ""
+    },
+    {
+      "address": "BM67",
+      "label": "130 to 140 g/m2",
+      "label_cell": "BK67",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BB$66:$BK$66,$BB$67:$BK$71),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BN67",
+      "label": "130 to 140 g/m2",
+      "label_cell": "BK67",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(N32,$AY$66:$BK$66,$AY$67:$BK$75),,TRUE)",
+      "cached_value": "#N/A",
+      "number_format": ""
+    },
+    {
+      "address": "BT67",
+      "label": "Filterd List",
+      "label_cell": "BT66",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BB$66:$BK$66,$BB$67:$BK$71),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BU67",
+      "label": "Filterd List",
+      "label_cell": "BU66",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BB$66:$BJ$66,$BB$67:$BJ$71),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "BV67",
+      "label": "Filterd List",
+      "label_cell": "BV66",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BB$66:$BJ$66,$BB$67:$BJ$71),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "CD67",
+      "label": "Filterd List",
+      "label_cell": "CD66",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(#REF!,$BB$66:$BJ$66,$BB$67:$BJ$71),,TRUE)",
+      "cached_value": "#REF!",
+      "number_format": ""
+    },
+    {
+      "address": "N69",
+      "label": "",
+      "label_cell": "",
+      "formula": "=N66/30",
+      "cached_value": 6,
+      "number_format": ""
+    },
+    {
+      "address": "Q69",
+      "label": "",
+      "label_cell": "",
+      "formula": "=N69*0.1",
+      "cached_value": 0.6000000000000001,
+      "number_format": ""
+    },
+    {
+      "address": "Y83",
+      "label": "",
+      "label_cell": "",
+      "formula": "=Y81*5%",
+      "cached_value": 40000,
+      "number_format": ""
+    },
+    {
+      "address": "Y86",
+      "label": "",
+      "label_cell": "",
+      "formula": "=Y83/12",
+      "cached_value": 3333.3333333333335,
+      "number_format": ""
+    },
+    {
+      "address": "BT100",
+      "label": "Filtered List 1",
+      "label_cell": "BT99",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(BT95,$BE$99,$BE$100:$BE$106),,TRUE)",
+      "cached_value": "AMC 00",
+      "number_format": ""
+    },
+    {
+      "address": "BT110",
+      "label": "Filterd List 2",
+      "label_cell": "BT109",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(BV106,$BE$110:$BM$110,$BE$111:$BM$111),,TRUE)",
+      "cached_value": "AMC 0",
+      "number_format": ""
+    },
+    {
+      "address": "BT113",
+      "label": "Filterd List 2",
+      "label_cell": "BT109",
+      "formula": "=COUNTIF($BT95,\"*Prime*\")",
+      "cached_value": 1,
+      "number_format": ""
+    },
+    {
+      "address": "AY135",
+      "label": "BinderType List ",
+      "label_cell": "AY133",
+      "formula": "=_xlfn.UNIQUE(_xlfn.XLOOKUP(N32,$AY$121:$CD$121,$AY$122:$CD$130),,TRUE)",
+      "cached_value": "S10E",
+      "number_format": ""
+    }
+  ]
+}
