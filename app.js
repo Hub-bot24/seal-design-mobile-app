@@ -135,7 +135,6 @@ function render(e) {
   setText('vldOut', vld);
   setText('ehvOut', `${round(r.ehvPct,2).toFixed(2)}%`);
   setText('yearCountOut', r.traffic.years);
-  setText('designAadtTop', designAadt);
   setText('designAadtBig', designAadt);
   setText('designTrafficOut', vld);
   setText('vfOut', round(r.vf,3).toFixed(3));
@@ -163,7 +162,7 @@ function restore() {
 }
 function copySummary() {
   const r = calculate();
-  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nAADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nFlags: ${r.flags.join(' | ')}`;
+  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nFlags: ${r.flags.join(' | ')}`;
   navigator.clipboard?.writeText(text);
   alert('Summary copied.');
 }
