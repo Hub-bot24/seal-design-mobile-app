@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>Seal Design Calculator</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Mobile seal design app</p>
+      <h1>Seal Design Calculator</h1>
+    </div>
+    <button id="installBtn" class="ghost" hidden>Install</button>
+  </header>
+
+  <main>
+    <section class="card warning-card">
+      <strong>Validation status</strong>
+      <p>This is the first app conversion from the <b>Calculation</b> and <b>Lookups</b> tabs only. It is not approved for production design until the validation table matches the Excel workbook case-by-case.</p>
+    </section>
+
+    <form id="designForm" class="grid">
+      <section class="card">
+        <h2>1. Project</h2>
+        <label>Project name<input name="projectName" value="Palen Creek Curve Upgrade" /></label>
+        <label>Road / location<input name="roadName" value="Mount Lindesay Hwy" /></label>
+        <label>Designer<input name="designer" value="Joel Hugo" /></label>
+        <label>Area m²<input name="area" type="number" step="0.01" value="1000" /></label>
+      </section>
+
+      <section class="card">
+        <h2>2. Traffic</h2>
+        <label>Base year<input name="baseYear" type="number" value="2020" /></label>
+        <label>Design year<input name="designYear" type="number" value="2026" /></label>
+        <label>Initial AADT<input name="initialAadt" type="number" step="1" value="700" /></label>
+        <label>Growth rate %<input name="growthRate" type="number" step="0.01" value="6" /></label>
+        <label>Design lane split %<input name="laneSplit" type="number" step="0.01" value="50" /></label>
+        <label>Heavy vehicles %<input name="heavyVehiclePct" type="number" step="0.01" value="0" /></label>
+      </section>
+
+      <section class="card">
+        <h2>3. Treatment</h2>
+        <label>Spec<select name="spec" data-options="spec"></select></label>
+        <label>Seal type<select name="sealType" data-options="sealType"></select></label>
+        <label>Treatment<select name="treatment" data-options="treatment"></select></label>
+        <label>Binder<select name="binder" data-options="binder"></select></label>
+        <label>Aggregate size<select name="aggregateSize" data-options="aggregateSize"></select></label>
+        <label>Existing surface / layer<select name="surfaceType" data-options="surfaceType"></select></label>
+      </section>
+
+      <section class="card">
+        <h2>4. Site condition</h2>
+        <label>ALD / aggregate dimension mm<input name="ald" type="number" step="0.01" value="5.7" /></label>
+        <label>Sand patch / texture depth<input name="sandPatch" type="number" step="0.01" value="0.6" /></label>
+        <label>Surface temperature °C<input name="surfaceTemp" type="number" step="0.1" value="20" /></label>
+        <label>Gradient<select name="gradient"><option>Flat or Downhill</option><option>Slow moving - Climbing Lanes</option></select></label>
+        <label>Intersection / braking?<select name="braking"><option>No</option><option>Yes</option></select></label>
+        <label>Existing seal coat count<select name="coatCount"><option>N/A</option><option>1</option><option>2</option><option>3</option><option>&gt;3</option></select></label>
+      </section>
+    </form>
+
+    <section class="results card">
+      <h2>Calculated result</h2>
+      <div id="resultsGrid" class="results-grid"></div>
+      <div class="actions">
+        <button id="copyBtn">Copy summary</button>
+        <button id="printBtn">Print / PDF</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Validation cases</h2>
+      <p>Add Excel input/output examples here. The app is only bulletproof once these match.</p>
+      <div id="validationList" class="validation-list"></div>
+    </section>
+  </main>
+
+  <footer>Built from Calculation + Lookups tabs only. No hidden-sheet logic included.</footer>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
