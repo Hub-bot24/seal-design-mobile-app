@@ -92,9 +92,10 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald) {
 }
 function calculate() {
   const v = formValues();
-  const shv = asNum(v.shvPct);
-  const lhv = asNum(v.lhvPct);
-  const ehvPct = shv + lhv;
+  const shvPct = Math.max(0, asNum(v.shvPct));
+  const lhvPct = Math.max(0, asNum(v.lhvPct));
+  const ehvPct = Math.min(100, shvPct + lhvPct);
+  const lvPct = Math.max(0, 100 - ehvPct);
   const traffic = compoundTraffic(v);
   const vf = vehicleFactor(traffic.vld, v.sealType);
   const vt = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
@@ -110,7 +111,7 @@ function calculate() {
   if (ar.note) flags.push(ar.note);
   if (finalBinder <= 0) flags.push('Calculated binder rate is zero or negative. Inputs are incomplete or unsupported.');
   flags.push('This version is layout-corrected to match your Excel-style screen, but it still needs Excel validation cases before real design use.');
-  return { v, traffic, shv, lhv, ehvPct, vf, vt, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, flags };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, flags };
 }
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 function setVal(name, value) { const el = $(`[name="${name}"]`); if (el) el.value = value; }
@@ -127,11 +128,16 @@ function render(e) {
   const r = calculate();
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
-  const lv = round(r.traffic.vld, 1);
+  const lv = round(r.traffic.vld * (r.lvPct / 100), 1);
+  const shvVeh = round(r.traffic.vld * (r.shvPct / 100), 1);
+  const lhvVeh = round(r.traffic.vld * (r.lhvPct / 100), 1);
   setText('awdtOut', round(asNum(r.v.initialAadt) * 2.06, 0));
   setText('awedtOut', round(asNum(r.v.initialAadt) * 1.39, 0));
   setText('aadtCalcOut', designAadt);
   setText('lvOut', lv);
+  setText('shvVehOut', shvVeh);
+  setText('lhvVehOut', lhvVeh);
+  setText('lvPctOut', `${round(r.lvPct,1).toFixed(1)}%`);
   setText('vldOut', vld);
   setText('ehvOut', `${round(r.ehvPct,2).toFixed(2)}%`);
   setText('yearCountOut', r.traffic.years);
