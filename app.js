@@ -19,7 +19,7 @@ function setOptions(select, values, preferred) {
   if (preferred && values.some(v => norm(v) === norm(preferred))) select.value = values.find(v => norm(v) === norm(preferred));
 }
 function populateOptions() {
-  const specs = [...new Set([...uniqueRows('LUT_Factors','Spec'), ...uniqueRows('LUT_Factors4','Spec')])];
+  const specs = ['AGPT04K-26', 'TN175'];
   const types = [...new Set([...uniqueRows('LUT_Factors','BF_Type'), ...uniqueRows('LUT_Factors4','BF_Type')])];
   const treatments = [...new Set([...uniqueRows('LUT_Factors','BF_Treatment'), ...uniqueRows('LUT_Factors4','BF_Treatment')])];
   const binders = [...new Set([...uniqueRows('LUT_Factors','BF_Binder'), ...uniqueRows('LUT_Factors4','BF_Binder')])];
@@ -67,11 +67,27 @@ function heavyVehicleGradientCorrection(ehvPct, gradient, braking) {
   if (ehv <= 0.65) return brake ? -0.05 : -0.04;
   return 0;
 }
+function specLookupKey(spec) {
+  // The extracted workbook still labels the Austroads lookup row as AGPT04K-18.
+  // In the app UI we show the current uploaded guide, AGPT04K-26, and route it to
+  // the Austroads lookup bucket until the full 2026 binder-factor table is mapped.
+  return norm(spec) === 'AGPT04K-26' ? 'AGPT04K-18' : spec;
+}
 function binderFactor(spec, sealType, treatment, binder) {
+  const key = specLookupKey(spec);
   const rows = [...tableRows('LUT_Factors'), ...tableRows('LUT_Factors4')];
-  const matches = rows.filter(r => norm(r.Spec) === norm(spec) && norm(r.BF_Type) === norm(sealType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
+  const matches = rows.filter(r => norm(r.Spec) === norm(key) && norm(r.BF_Type) === norm(sealType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
   const result = matches.reduce((sum, r) => sum + asNum(r.BF_Result, 0), 0);
   return result || null;
+}
+function aggregateShapeAdjustment(flIndex) {
+  const fi = asNum(flIndex, NaN);
+  if (!Number.isFinite(fi)) return { va: 0, shape: 'Missing', warning: 'Flakiness index is missing, so Va is set to 0.' };
+  if (fi > 35) return { va: 0, shape: 'Very flaky', warning: 'Flakiness index > 35%: Part 4K considers this too flaky and not recommended for sealing. Do not use this design without review.' };
+  if (fi >= 26) return { va: -0.01, shape: 'Flaky', warning: '' };
+  if (fi >= 16) return { va: 0, shape: 'Angular', warning: '' };
+  if (fi >= 10) return { va: 0.01, shape: 'Cubic', warning: '' };
+  return { va: 0.02, shape: 'Very cubic', warning: 'Very cubic aggregate (<10% FI) is not recommended for the bottom layer of a D/D seal because angular interlock may be insufficient.' };
 }
 function aggregateRetention(surfaceType, aggregateSize, sandPatch) {
   const sp = asNum(sandPatch);
@@ -94,24 +110,28 @@ function calculate() {
   const v = formValues();
   const shvPct = Math.max(0, asNum(v.shvPct));
   const lhvPct = Math.max(0, asNum(v.lhvPct));
-  const ehvPct = Math.min(100, shvPct + lhvPct);
-  const lvPct = Math.max(0, 100 - ehvPct);
+  const hvPct = Math.min(100, shvPct + lhvPct);
+  const ehvPct = Math.min(100, shvPct + (lhvPct * 3));
+  const lvPct = Math.max(0, 100 - hvPct);
   const traffic = compoundTraffic(v);
   const vf = vehicleFactor(traffic.vld, v.sealType);
   const vt = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
+  const shape = aggregateShapeAdjustment(v.flIndex);
   const bf = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
   const ar = aggregateRetention(v.surfaceType, v.aggregateSize, v.sandPatch);
-  const designVf = vf + vt;
+  const designVf = vf + shape.va + vt;
   const baseBinder = designVf * asNum(v.ald);
   const modifiedBinder = baseBinder * (bf ?? 0);
   const finalBinder = modifiedBinder + ar.numeric;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, v.ald);
   const flags = [];
   if (!bf) flags.push('Binder factor not found for this Spec + Type + Treatment + Binder. Do not use the rate until this is mapped against Excel.');
+  if (shape.warning) flags.push(shape.warning);
+  if (norm(v.spec) === 'AGPT04K-26') flags.push('4K mode: Va now follows AGPT04K-26 Table 6.1 flakiness bands. Binder-factor lookup still needs final 2026 table validation.');
   if (ar.note) flags.push(ar.note);
   if (finalBinder <= 0) flags.push('Calculated binder rate is zero or negative. Inputs are incomplete or unsupported.');
   flags.push('This version is layout-corrected to match your Excel-style screen, but it still needs Excel validation cases before real design use.');
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, flags };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, flags };
 }
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 function setVal(name, value) { const el = $(`[name="${name}"]`); if (el) el.value = value; }
@@ -144,7 +164,7 @@ function render(e) {
   setText('designAadtBig', designAadt);
   setText('designTrafficOut', vld);
   setText('vfOut', round(r.vf,3).toFixed(3));
-  setText('vaOut', '0');
+  setText('vaOut', round(r.shape.va,3));
   setText('vtOut', round(r.vt,3));
   setText('otherOut', '0');
   setText('designVfOut', round(r.designVf,3).toFixed(3));
