@@ -78,3 +78,17 @@ body.double-mode .calc-table .value-cell{border-right:0}
 body.double-mode .calc-table .r span{font-size:13px}
 body.double-mode .calc-table .r b{font-size:12px}
 @media(max-width:980px){body.double-mode .calc-table,body.double-mode .final-results{min-width:760px}}
+
+/* v22: second application has its own aggregate, ALD, flakiness and binder inputs. */
+.block.four{display:grid;grid-template-columns:repeat(4,1fr)}
+.block.four .block-head{grid-column:1/-1}
+.second-coat-inputs{display:none!important}
+body.double-mode .second-coat-inputs{display:grid!important}
+@media(max-width:980px){.block.four{grid-template-columns:1fr}.block.four label{border-right:0;border-bottom:1px solid var(--line-strong)}.block.four label:last-child{border-bottom:0}}
+
+
+/* v23: second application has five inputs including optional Aba2. */
+.block.five{display:grid;grid-template-columns:repeat(5,1fr)}
+.block.five .block-head{grid-column:1/-1}
+@media(max-width:980px){.block.five{grid-template-columns:1fr}.block.five label{border-right:0;border-bottom:1px solid var(--line-strong)}.block.five label:last-child{border-bottom:0}}
+body.double-mode .calc-table output.second-val.na-value{color:#64748b;background:#f8fafc}
