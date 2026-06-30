@@ -18,19 +18,46 @@ function setOptions(select, values, preferred) {
   select.innerHTML = values.map(v => `<option value="${safe(v)}">${safe(v)}</option>`).join('');
   if (preferred && values.some(v => norm(v) === norm(preferred))) select.value = values.find(v => norm(v) === norm(preferred));
 }
+function binderRowsForSpec(spec) {
+  // 4K uses the extracted Austroads table. TN175 uses the TMR-specific table bucket.
+  // The workbook extraction labels individual TN rows strangely, so TN175 mode uses all
+  // rows in LUT_Factors4, then filters by seal type/treatment/binder.
+  return norm(spec) === 'TN175' ? tableRows('LUT_Factors4') : tableRows('LUT_Factors');
+}
 function populateOptions() {
   const specs = ['AGPT04K-26', 'TN175'];
-  const types = [...new Set([...uniqueRows('LUT_Factors','BF_Type'), ...uniqueRows('LUT_Factors4','BF_Type')])];
-  const treatments = [...new Set([...uniqueRows('LUT_Factors','BF_Treatment'), ...uniqueRows('LUT_Factors4','BF_Treatment')])];
-  const binders = [...new Set([...uniqueRows('LUT_Factors','BF_Binder'), ...uniqueRows('LUT_Factors4','BF_Binder')])];
   const aggSizes = uniqueRows('LookupsTbl','B (Agg Size 2)');
   const surfaces = uniqueRows('LookupsTbl','A (Agg Size 1)');
   setOptions($('[name="spec"]'), specs, 'TN175');
-  setOptions($('[name="sealType"]'), types, 'Double 1st Coat');
-  setOptions($('[name="treatment"]'), treatments, 'HSS2-M');
-  setOptions($('[name="binder"]'), binders, 'S15R');
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
   setOptions($('[name="surfaceType"]'), surfaces, 'N/A');
+  updateTreatmentAndBinderOptions();
+}
+function valuesFromRows(rows, field) {
+  return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && String(v).trim() !== ''))]
+    .sort((a,b)=>String(a).localeCompare(String(b)));
+}
+function updateTreatmentAndBinderOptions() {
+  const spec = $('[name="spec"]')?.value || 'TN175';
+  const typeEl = $('[name="sealType"]');
+  const treatmentEl = $('[name="treatment"]');
+  const binderEl = $('[name="binder"]');
+  const rows = binderRowsForSpec(spec);
+
+  const currentType = typeEl?.value;
+  const types = valuesFromRows(rows, 'BF_Type');
+  setOptions(typeEl, types, currentType && types.some(v => norm(v) === norm(currentType)) ? currentType : 'Double 1st Coat');
+
+  const currentTreatment = treatmentEl?.value;
+  const typeRows = rows.filter(r => norm(r.BF_Type) === norm(typeEl?.value));
+  const treatments = valuesFromRows(typeRows, 'BF_Treatment');
+  setOptions(treatmentEl, treatments, currentTreatment && treatments.some(v => norm(v) === norm(currentTreatment)) ? currentTreatment : 'Conventional Seal');
+
+  const currentBinder = binderEl?.value;
+  const binderRows = typeRows.filter(r => norm(r.BF_Treatment) === norm(treatmentEl?.value));
+  const binders = valuesFromRows(binderRows, 'BF_Binder');
+  const preferredBinder = currentBinder && binders.some(v => norm(v) === norm(currentBinder)) ? currentBinder : (binders.includes('C170') ? 'C170' : binders[0]);
+  setOptions(binderEl, binders, preferredBinder);
 }
 function formValues() {
   const fd = new FormData($('#designForm'));
@@ -67,16 +94,9 @@ function heavyVehicleGradientCorrection(ehvPct, gradient, braking) {
   if (ehv <= 0.65) return brake ? -0.05 : -0.04;
   return 0;
 }
-function specLookupKey(spec) {
-  // The extracted workbook still labels the Austroads lookup row as AGPT04K-18.
-  // In the app UI we show the current uploaded guide, AGPT04K-26, and route it to
-  // the Austroads lookup bucket until the full 2026 binder-factor table is mapped.
-  return norm(spec) === 'AGPT04K-26' ? 'AGPT04K-18' : spec;
-}
 function binderFactor(spec, sealType, treatment, binder) {
-  const key = specLookupKey(spec);
-  const rows = [...tableRows('LUT_Factors'), ...tableRows('LUT_Factors4')];
-  const matches = rows.filter(r => norm(r.Spec) === norm(key) && norm(r.BF_Type) === norm(sealType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
+  const rows = binderRowsForSpec(spec);
+  const matches = rows.filter(r => norm(r.BF_Type) === norm(sealType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
   const result = matches.reduce((sum, r) => sum + asNum(r.BF_Result, 0), 0);
   return result || null;
 }
@@ -110,8 +130,6 @@ function buildDesignNotes(r) {
 
   if (!Number.isFinite(ald) || ald <= 0) {
     notes.push(note('WARNING', 'ALD', 'ALD is missing or zero. Binder rate and aggregate spread cannot be trusted.', 'AGPT04K-26 Section 5.3.1'));
-  } else {
-    notes.push(note('INFO', 'ALD', `ALD ${ald} mm is being used in binder and aggregate spread calculations.`, 'AGPT04K-26 Section 5.3.1'));
   }
 
   if (Number.isFinite(fi)) {
@@ -149,6 +167,8 @@ function buildDesignNotes(r) {
 
   if (!r.bf) {
     notes.push(note('WARNING', 'Binder factor', 'Binder factor not found for this SPEC + TYPE + TREATMENT + BINDER. Do not use the binder rate until mapped/validated.', 'Extracted Lookups tab / AGPT04K-26 Tables 6.4 and 6.5'));
+  } else {
+    notes.push(note('INFO', 'Binder selection', `Binder list filtered to ${r.v.spec} + ${r.v.sealType} + ${r.v.treatment}; BF ${r.bf} applied for ${r.v.binder}.`, 'Binder factor lookup'));
   }
   if (r.finalBinder <= 0) {
     notes.push(note('WARNING', 'Design binder rate', 'Calculated binder rate is zero or negative. Inputs are incomplete, unsupported, or the lookup is missing.', 'Calculation check'));
@@ -227,6 +247,7 @@ function syncAld(source) {
   else mirror.value = ald.value;
 }
 function render(e) {
+  if (['spec','sealType','treatment'].includes(e?.target?.name)) updateTreatmentAndBinderOptions();
   if (e?.target?.name === 'aldMirror') syncAld(e.target);
   if (e?.target?.name === 'ald') syncAld(e.target);
   const r = calculate();
@@ -281,6 +302,7 @@ async function init() {
   state.lookups = await fetch('./data/lookups.json').then(r => r.json());
   populateOptions();
   restore();
+  updateTreatmentAndBinderOptions();
   $('#designForm').addEventListener('input', render);
   $('#copyBtn').addEventListener('click', copySummary);
   $('#printBtn').addEventListener('click', () => window.print());
