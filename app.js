@@ -125,9 +125,18 @@ function note(level, field, message, source = '') {
   return { level, field, message, source };
 }
 function isCutbackBinder(binder) {
-  const b = norm(binder);
-  // AMC5/AMC6/AMC7 and field blended cutback grades must trigger allowance notes.
-  return /^AMC\s*\d+/.test(b) || b.includes('CUTBACK') || b.includes('CUT BACK');
+  const raw = String(binder ?? '');
+  const b = raw.toUpperCase().trim();
+  const compact = b.replace(/[^A-Z0-9]/g, '');
+  // Be deliberately broad here. AMC binders are cutback binders in this app context,
+  // and the note must trigger even if the lookup text has spaces, punctuation, or hidden characters.
+  return compact.startsWith('AMC')
+    || compact.includes('AMC5')
+    || compact.includes('AMC6')
+    || compact.includes('AMC7')
+    || b.includes('CUTBACK')
+    || b.includes('CUT BACK')
+    || b.includes('CUTTER');
 }
 function allowanceNum(v) {
   const n = asNum(v, 0);
@@ -154,7 +163,7 @@ function buildDesignNotes(r) {
   }
 
   if (cutback) {
-    notes.push(note('CHECK', 'Cutback binder / AMC', `${r.v.binder} selected. Check whether a +0.1 L/m² allowance is required for binder absorption/porous pavement conditions. Do not add it blindly; apply it in Ap or Aba only when the pavement/aggregate condition justifies it. Also confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
+    notes.push(note('CHECK', 'Cutback binder / AMC', `${r.v.binder} selected. AMC/cutback binder selected. Consider whether a +0.1 L/m² allowance is required for binder absorption/porous pavement conditions. Do not add it blindly; enter it in Ap or Aba only when the pavement/aggregate condition justifies it. Also confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
     if (ap === 0 && aba === 0) {
       notes.push(note('CHECK', 'Binder absorption allowance', 'AMC/cutback selected with Aba and Ap both set to 0. If this is an initial seal directly on granular/unbound or porous pavement, consider +0.1 to +0.2 L/m² for pavement absorption. Aggregate absorption, if required, usually should not exceed +0.1 L/m².', 'AGPT04K-26 Section 6.2.4'));
     }
@@ -302,6 +311,19 @@ function render(e) {
   if (e?.target?.name === 'aldMirror') syncAld(e.target);
   if (e?.target?.name === 'ald') syncAld(e.target);
   const r = calculate();
+  const amcNoteEl = document.getElementById('amcBinderNote');
+  const cutbackNote = r.notes.find(n => n.field === 'Cutback binder / AMC') || r.notes.find(n => n.field === 'Binder absorption allowance');
+  if (amcNoteEl) {
+    if (cutbackNote) {
+      amcNoteEl.hidden = false;
+      amcNoteEl.textContent = `${noteIcon(cutbackNote.level)} ${cutbackNote.message}`;
+      amcNoteEl.className = `seal-wide-note ${cutbackNote.level.toLowerCase()}`;
+    } else {
+      amcNoteEl.hidden = true;
+      amcNoteEl.textContent = '';
+      amcNoteEl.className = 'seal-wide-note';
+    }
+  }
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
   const lv = round(r.traffic.vld * (r.lvPct / 100), 1);
