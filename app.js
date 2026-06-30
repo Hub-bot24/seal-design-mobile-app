@@ -33,6 +33,7 @@ function populateOptions() {
   const surfaces = uniqueRows('LookupsTbl','A (Agg Size 1)');
   setOptions($('[name="spec"]'), specs, 'TN175');
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
+  setOptions($('[name="aggregateSize2"]'), aggSizes, '7mm');
   setOptions($('[name="surfaceType"]'), surfaces, 'N/A');
   updateTreatmentAndBinderOptions();
 }
@@ -54,6 +55,9 @@ function updateTreatmentAndBinderOptions() {
   const typeEl = $('[name="sealType"]');
   const treatmentEl = $('[name="treatment"]');
   const binderEl = $('[name="binder"]');
+  const binder2El = $('[name="binder2"]');
+  const agg2El = $('[name="aggregateSize2"]');
+  const ald2El = $('[name="aldMirror2"]');
   const rows = binderRowsForSpec(spec);
 
   const currentType = typeEl?.value;
@@ -72,6 +76,20 @@ function updateTreatmentAndBinderOptions() {
   const binders = valuesFromRows(binderRows, 'BF_Binder');
   const preferredBinder = currentBinder && binders.some(v => norm(v) === norm(currentBinder)) ? currentBinder : (binders.includes('C170') ? 'C170' : binders[0]);
   setOptions(binderEl, binders, preferredBinder);
+
+  // Second application binder is its own selection. It comes from Double 2nd Coat + current treatment.
+  const secondType = rows.find(r => norm(r.BF_Type).includes('DOUBLE 2ND'))?.BF_Type || 'Double 2nd Coat';
+  const secondRows = rows.filter(r => norm(r.BF_Type).includes('DOUBLE 2ND') && norm(r.BF_Treatment) === norm(treatmentEl?.value));
+  const secondBinders = valuesFromRows(secondRows, 'BF_Binder');
+  const currentBinder2 = binder2El?.value;
+  const preferredBinder2 = currentBinder2 && secondBinders.some(v => norm(v) === norm(currentBinder2))
+    ? currentBinder2
+    : (secondBinders.some(v => norm(v) === norm(binderEl?.value)) ? binderEl.value : (secondBinders.includes('C170') ? 'C170' : secondBinders[0]));
+  setOptions(binder2El, secondBinders, preferredBinder2);
+
+  // Keep a sensible default for the second aggregate, but let the user overwrite it.
+  if (agg2El && !agg2El.value) agg2El.value = secondCoatAggregate($('[name="aggregateSize"]')?.value || '10mm');
+  if (ald2El && (!ald2El.value || Number(ald2El.value) <= 0)) ald2El.value = defaultAldForAggregate(agg2El?.value || '7mm', 3.8);
 }
 function formValues() {
   const fd = new FormData($('#designForm'));
@@ -156,90 +174,103 @@ function buildDesignNotes(r) {
   const ap = allowanceNum(r.v.ap);
   const ae = r.ae?.numeric ?? 0;
   const cutback = isCutbackBinder(r.v.binder);
+  const isSecondCoat = String(r.v._secondCoat || '') === '1';
+  const coatPrefix = isSecondCoat ? 'Second coat – ' : '';
 
-  if (spec === 'TN175') {
+  if (spec === 'TN175' && !isSecondCoat) {
     notes.push(note('CHECK', 'SPEC', 'TN175 mode selected. Use TN175/TMR-specific rules and project requirements for this design.', 'TN175'));
   }
 
   if (cutback) {
     const zeroAllowance = aba === 0 && ap === 0 ? ' Aba and Ap are currently 0, so confirm no absorption allowance is required.' : '';
-    notes.push(note('CHECK', 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
+    notes.push(note('CHECK', coatPrefix + 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
   }
 
   if (!Number.isFinite(ald) || ald <= 0) {
-    notes.push(note('WARNING', 'ALD', 'ALD is missing or zero. Binder rate and aggregate spread cannot be trusted.', 'AGPT04K-26 Section 5.3.1'));
+    notes.push(note('WARNING', coatPrefix + 'ALD', 'ALD is missing or zero. Binder rate and aggregate spread cannot be trusted.', 'AGPT04K-26 Section 5.3.1'));
   }
 
   if (Number.isFinite(fi)) {
-    notes.push(note(r.shape.level, 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
+    notes.push(note(r.shape.level, coatPrefix + 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
   } else {
-    notes.push(note('WARNING', 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
+    notes.push(note('WARNING', coatPrefix + 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
   }
 
   if (r.vt !== 0) {
-    notes.push(note('APPLIED', 'Traffic effects', `Traffic effects adjustment Vt = ${round(r.vt,3)} applied from EHV ${round(r.ehvPct,2)}%, gradient '${r.v.gradient}', and channelised/braking '${r.v.braking}'.`, 'AGPT04K-26 Table 6.2 / traffic effects lookup'));
+    notes.push(note('APPLIED', coatPrefix + 'Traffic effects', `Traffic effects adjustment Vt = ${round(r.vt,3)} applied from EHV ${round(r.ehvPct,2)}%, gradient '${r.v.gradient}', and channelised/braking '${r.v.braking}'.`, 'AGPT04K-26 Table 6.2 / traffic effects lookup'));
   }
   if (r.otherAdjustment !== 0) {
-    notes.push(note('APPLIED', 'Other voids adjustment', `Other voids adjustment = ${round(r.otherAdjustment,3)} applied by designer entry.`, 'Designer entry'));
+    notes.push(note('APPLIED', coatPrefix + 'Other voids adjustment', `Other voids adjustment = ${round(r.otherAdjustment,3)} applied by designer entry.`, 'Designer entry'));
   }
 
-  if (!Number.isFinite(textureInput)) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input is missing. Ast lookup has been treated as 0.', 'Lookups tab / AGPT04K-26 Table 6.3'));
-  } else if (textureInput < 0) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input cannot be negative.', 'Designer check'));
+  if (!isSecondCoat) {
+    if (!Number.isFinite(textureInput)) {
+      notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input is missing. Ast lookup has been treated as 0.', 'Lookups tab / AGPT04K-26 Table 6.3'));
+    } else if (textureInput < 0) {
+      notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input cannot be negative.', 'Designer check'));
+    }
+    const arNote = norm(r.ar.value);
+    if (arNote === 'NOTE 1') {
+      notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 1: embedment considerations are dominant. Review embedment allowance and treatment suitability.', 'Lookups tab surface texture table'));
+    } else if (arNote === 'NOTE 2') {
+      notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 2: specialised treatments are necessary. Do not treat this as a normal Ast allowance.', 'Lookups tab surface texture table'));
+    } else if (arNote === 'NOTE 3') {
+      notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 3: this treatment might not be advisable depending on aggregate shape/interlock. Consider alternative treatment, surface enrichment, or smaller aggregate seal.', 'Lookups tab surface texture table'));
+    } else if (arNote === 'NOTE 4') {
+      notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 4: for aggregate sizes greater than 14 mm, adopt allowances applicable to 14 mm aggregate.', 'Lookups tab surface texture table'));
+    } else if (r.ar.note && r.ar.value === '') {
+      notes.push(note('APPLIED', 'Surface texture / sand patch', r.ar.note, 'Calculation sheet surface texture rule'));
+    } else if (ast > 0.5) {
+      notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² applied from the lookup. This is high; review aggregate size and/or treatment selection.`, 'Lookups tab surface texture table / AGPT04K-26 Table 6.3'));
+    } else if (ast !== 0 || Number.isFinite(textureInput)) {
+      notes.push(note('APPLIED', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² applied from surface '${r.v.surfaceType}', aggregate '${r.v.aggregateSize}', and sand patch ${r.v.surfaceTexture}.`, 'Lookups tab surface texture table'));
+    }
+
+    if (ap > 0.2) {
+      notes.push(note('WARNING', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m². 4K says allowances above 0.2 L/m² should trigger consideration of an alternative treatment.`, 'AGPT04K-26 Section 6.2.4'));
+    } else if (ap > 0) {
+      notes.push(note('APPLIED', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m² applied. Confirm this matches pavement type and surface condition.`, 'AGPT04K-26 Section 6.2.4'));
+    }
+    if (aba > 0.1) {
+      notes.push(note('WARNING', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m². 4K says aggregate absorption, if required, should not usually exceed 0.1 L/m².`, 'AGPT04K-26 Section 6.2.4'));
+    } else if (aba > 0) {
+      notes.push(note('APPLIED', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m² applied. Confirm aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Section 6.2.4'));
+    }
+    if (r.ae?.display === 'NOTE') {
+      notes.push(note('CHECK', 'Embedment', r.ae.note, 'Calculation sheet embedment lookup'));
+    } else if (ae !== 0) {
+      notes.push(note('APPLIED', 'Embedment', `Embedment allowance Ae = ${ae} L/m² applied from design traffic ${round(r.traffic.vld,0)} v/l/d and ball penetration ${r.v.ballpin} mm.`, 'Calculation sheet embedment lookup / AGPT04K-26 Section 6.2.3'));
+    }
+
   }
-  const arNote = norm(r.ar.value);
-  if (arNote === 'NOTE 1') {
-    notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 1: embedment considerations are dominant. Review embedment allowance and treatment suitability.', 'Lookups tab surface texture table'));
-  } else if (arNote === 'NOTE 2') {
-    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 2: specialised treatments are necessary. Do not treat this as a normal Ast allowance.', 'Lookups tab surface texture table'));
-  } else if (arNote === 'NOTE 3') {
-    notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 3: this treatment might not be advisable depending on aggregate shape/interlock. Consider alternative treatment, surface enrichment, or smaller aggregate seal.', 'Lookups tab surface texture table'));
-  } else if (arNote === 'NOTE 4') {
-    notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned NOTE 4: for aggregate sizes greater than 14 mm, adopt allowances applicable to 14 mm aggregate.', 'Lookups tab surface texture table'));
-  } else if (r.ar.note && r.ar.value === '') {
-    notes.push(note('APPLIED', 'Surface texture / sand patch', r.ar.note, 'Calculation sheet surface texture rule'));
-  } else if (ast > 0.5) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² applied from the lookup. This is high; review aggregate size and/or treatment selection.`, 'Lookups tab surface texture table / AGPT04K-26 Table 6.3'));
-  } else if (ast !== 0 || Number.isFinite(textureInput)) {
-    notes.push(note('APPLIED', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² applied from surface '${r.v.surfaceType}', aggregate '${r.v.aggregateSize}', and sand patch ${r.v.surfaceTexture}.`, 'Lookups tab surface texture table'));
+  if (isSecondCoat) {
+    notes.push(note('APPLIED', 'Second coat allowances', 'Second coat allowance rules applied: Ast = N/A, Ap = N/A and Ae = N/A for an immediate double/double second application. Aba2 is the only allowance 4K says could be considered, and is usually nil for normal aggregates.', 'AGPT04K-26 Section 5.5.2'));
+    if (aba > 0.1) {
+      notes.push(note('WARNING', 'Second coat – Binder Abs. by Agg.', `Second coat aggregate absorption allowance Aba2 = ${aba} L/m². 4K says aggregate absorption, if required, should not usually exceed 0.1 L/m².`, 'AGPT04K-26 Sections 5.5.2 and 6.2.4'));
+    } else if (aba > 0) {
+      notes.push(note('APPLIED', 'Second coat – Binder Abs. by Agg.', `Second coat aggregate absorption allowance Aba2 = ${aba} L/m² applied. Confirm the second coat aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Sections 5.5.2 and 6.2.4'));
+    }
   }
 
-  if (ap > 0.2) {
-    notes.push(note('WARNING', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m². 4K says allowances above 0.2 L/m² should trigger consideration of an alternative treatment.`, 'AGPT04K-26 Section 6.2.4'));
-  } else if (ap > 0) {
-    notes.push(note('APPLIED', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m² applied. Confirm this matches pavement type and surface condition.`, 'AGPT04K-26 Section 6.2.4'));
-  }
-  if (aba > 0.1) {
-    notes.push(note('WARNING', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m². 4K says aggregate absorption, if required, should not usually exceed 0.1 L/m².`, 'AGPT04K-26 Section 6.2.4'));
-  } else if (aba > 0) {
-    notes.push(note('APPLIED', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m² applied. Confirm aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Section 6.2.4'));
-  }
-  if (r.ae?.display === 'NOTE') {
-    notes.push(note('CHECK', 'Embedment', r.ae.note, 'Calculation sheet embedment lookup'));
-  } else if (ae !== 0) {
-    notes.push(note('APPLIED', 'Embedment', `Embedment allowance Ae = ${ae} L/m² applied from design traffic ${round(r.traffic.vld,0)} v/l/d and ball penetration ${r.v.ballpin} mm.`, 'Calculation sheet embedment lookup / AGPT04K-26 Section 6.2.3'));
-  }
 
-
-  if (laneSplit !== 50) {
+  if (!isSecondCoat && laneSplit !== 50) {
     notes.push(note('CHECK', 'Design lane split', `Design lane split is ${laneSplit}%, not 50%. Confirm this is intentional.`, 'Traffic distribution check'));
   }
 
-  if ((r.shvPct + r.lhvPct) > 100) {
+  if (!isSecondCoat && (r.shvPct + r.lhvPct) > 100) {
     notes.push(note('WARNING', 'Traffic breakdown', 'SHV% + LHV% exceeds 100%. LV has been forced to 0, but the input is invalid.', 'Traffic breakdown check'));
   }
-  if (r.ehvPct > 45) {
+  if (!isSecondCoat && r.ehvPct > 45) {
     notes.push(note('WARNING', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. High heavy-vehicle loading: check treatment/binder selection.`, 'AGPT04K-26 Section 5.2.5'));
-  } else if (r.ehvPct > 25) {
+  } else if (!isSecondCoat && r.ehvPct > 25) {
     notes.push(note('CHECK', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. Review heavy vehicle effects and stress conditions.`, 'AGPT04K-26 Section 5.2.5'));
   }
 
   if (!r.bf) {
-    notes.push(note('WARNING', 'Binder factor', 'Binder factor not found for this SPEC + TYPE + TREATMENT + BINDER. Do not use the binder rate until mapped/validated.', 'Extracted Lookups tab / AGPT04K-26 Tables 6.4 and 6.5'));
+    notes.push(note('WARNING', coatPrefix + 'Binder factor', 'Binder factor not found for this SPEC + TYPE + TREATMENT + BINDER. Do not use the binder rate until mapped/validated.', 'Extracted Lookups tab / AGPT04K-26 Tables 6.4 and 6.5'));
   }
   if (r.finalBinder <= 0) {
-    notes.push(note('WARNING', 'Design binder rate', 'Calculated binder rate is zero or negative. Inputs are incomplete, unsupported, or the lookup is missing.', 'Calculation check'));
+    notes.push(note('WARNING', coatPrefix + 'Design binder rate', 'Calculated binder rate is zero or negative. Inputs are incomplete, unsupported, or the lookup is missing.', 'Calculation check'));
   }
   return notes;
 }
@@ -252,7 +283,7 @@ function surfaceTextureAllowance(surfaceType, aggregateSize, sandPatch, sealType
 
   // Match the spreadsheet guard clauses before using LookupsTbl.
   if (tr === 'HATELIT' || tr === 'HUESKER CHIPSEAL GRID A10' || tr === 'HUESKER CHIPSEAL GRID A15' || st === 'DOUBLE 2ND COAT' || surf === 'N/A') {
-    return { value: '', numeric: 0, display: '', note: 'Surface texture allowance is not applied for this selected treatment/type/surface according to the calculation-sheet rule.' };
+    return { value: 'N/A', numeric: 0, display: 'N/A', note: 'Surface texture allowance is not applicable for an immediate double/double second application.' };
   }
   if (['GRANULAR','FOAMED BITUMEN','PRIMED','PRIMER SEAL','BRIDGE DECK'].includes(surf)) {
     return { value: 0, numeric: 0, display: '0', note: 'Surface type is treated as 0 surface texture allowance by the calculation-sheet rule.' };
@@ -279,7 +310,8 @@ function embedmentAllowance(vld, ballpin) {
   const bpRaw = String(ballpin ?? '').trim();
   const bp = asNum(ballpin, NaN);
   const traffic = asNum(vld, 0);
-  if (norm(bpRaw) === 'N/A' || bpRaw === '') return { value: 0, numeric: 0, display: '0', note: '' };
+  if (norm(bpRaw) === 'N/A') return { value: 'N/A', numeric: 0, display: 'N/A', note: '' };
+  if (bpRaw === '') return { value: 0, numeric: 0, display: '0', note: '' };
   if (bpRaw === '>3' || (Number.isFinite(bp) && bp > 3)) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: 'Ball penetration is greater than 3 mm. Spreadsheet returns NOTE; designer review is required rather than a simple numeric embedment allowance.' };
   if (!Number.isFinite(bp)) return { value: 0, numeric: 0, display: '0', note: 'Ball penetration value is not numeric; embedment allowance set to 0 until checked.' };
 
@@ -356,21 +388,32 @@ function calculate() {
   const v = formValues();
   const result = calculateCoat(v);
   if (isDoubleFirst(v.sealType)) {
-    const secondAgg = secondCoatAggregate(v.aggregateSize);
+    const secondAgg = v.aggregateSize2 || secondCoatAggregate(v.aggregateSize);
     const secondV = {
       ...v,
+      _secondCoat: '1',
       sealType: 'Double 2nd Coat',
       aggregateSize: secondAgg,
-      aldMirror: defaultAldForAggregate(secondAgg, asNum(v.aldMirror, 3.8)),
-      // The second coat in the spreadsheet uses no surface texture allowance.
-      surfaceTexture: v.surfaceTexture
+      aldMirror: v.aldMirror2 || defaultAldForAggregate(secondAgg, 3.8),
+      flIndex: v.flIndex2 || v.flIndex,
+      binder: v.binder2 || v.binder,
+      // Second application is a separate coat over the first application.
+      // It has its own ALD/flakiness/binder, but no existing-surface texture allowance,
+      // no ball-penetration embedment allowance, and no pavement/aggregate absorption allowance.
+      surfaceType: 'N/A',
+      surfaceTexture: '',
+      ballpin: 'N/A',
+      aba: allowanceNum(v.aba2),
+      ap: 0,
+      otherAdjustment: 0
     };
     result.second = calculateCoat(secondV);
     result.secondLabel = `Double 2nd Coat / ${secondAgg}`;
   }
   result.notes = buildDesignNotes(result);
   if (result.second) {
-    result.notes.unshift(note('APPLIED', 'Double/double second application', `Double 1st Coat selected. A second calculation column has been applied as ${result.secondLabel}. The second column is not manually selected in the first-coat dropdown.`, 'Double/double design layout rule'));
+    result.notes.unshift(note('APPLIED', 'Double/double second application', `Double 1st Coat selected. A second calculation column has been applied as ${result.secondLabel}. The second coat uses its own ALD, flakiness index and binder. Ast, Ap and Ae are marked N/A; Aba2 remains optional and defaults to 0.`, 'AGPT04K-26 Section 5.5.2'));
+    result.notes.push(...buildDesignNotes(result.second));
   }
   return result;
 }
@@ -416,7 +459,14 @@ function setText(id, value) { const el = document.getElementById(id); if (el) el
 function setVal(name, value) { const el = $(`[name="${name}"]`); if (el) el.value = value; }
 function syncAld() { /* ALD is now entered once in the AGGREGATE block and pulled into the calculation table. */ }
 function render(e) {
-  if (['spec','sealType','treatment'].includes(e?.target?.name)) updateTreatmentAndBinderOptions();
+  if (['spec','sealType','treatment','aggregateSize'].includes(e?.target?.name)) {
+    if (e?.target?.name === 'aggregateSize') {
+      const agg2 = secondCoatAggregate(e.target.value);
+      setVal('aggregateSize2', agg2);
+      setVal('aldMirror2', defaultAldForAggregate(agg2, 3.8));
+    }
+    updateTreatmentAndBinderOptions();
+  }
 
   const r = calculate();
   const doubleMode = Boolean(r.second);
@@ -465,10 +515,10 @@ function render(e) {
   setText('baseBinderOut2', s2 ? round(s2.baseBinder,2).toFixed(2) : '');
   setText('bfOut2', s2 ? (s2.bf ?? '0.0') : '');
   setText('modifiedBinderOut2', s2 ? round(s2.modifiedBinder,2).toFixed(2) : '');
-  setText('astOut2', s2 ? (s2.ar.display || (s2.ar.numeric === 0 ? '0' : round(s2.ar.numeric,2))) : '');
+  setText('astOut2', s2 ? 'N/A' : '');
   setText('abaOut2', s2 ? round(s2.aba,2) : '');
-  setText('apOut2', s2 ? round(s2.ap,2) : '');
-  setText('embedOut2', s2 ? (s2.ae.display || round(s2.ae.numeric,2)) : '');
+  setText('apOut2', s2 ? 'N/A' : '');
+  setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
   setText('aggSpreadOut2', s2 ? round(s2.agg.m2m3,0) : '');
   setText('rightTrafficOut', vld);
@@ -484,10 +534,39 @@ function restore() {
 }
 function copySummary() {
   const r = calculate();
-  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAdjustments: Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}\nAllowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
+  const secondText = r.second ? `
+
+Second coat:
+Type: ${r.second.v.sealType}
+Binder: ${r.second.v.binder}
+Aggregate: ${r.second.v.aggregateSize}
+ALD: ${round(r.second.ald,2)} mm
+Flakiness Index: ${r.second.v.flIndex}%
+Binder: ${round(r.second.finalBinder,2)} L/m²
+Aggregate spread: ${round(r.second.agg.m2m3,0)} m²/m³
+Allowances: Ast N/A + Aba2 ${round(r.second.aba,2)} + Ap N/A + Ae N/A` : '';
+  const text = `Spray seal design summary
+Project: ${r.v.projectName}
+Road: ${r.v.roadName}
+Spec: ${r.v.spec}
+Type: ${r.v.sealType}
+Treatment: ${r.v.treatment}
+Binder: ${r.v.binder}
+Aggregate: ${r.v.aggregateSize}
+Client AADT: ${r.v.initialAadt}
+Design AADT: ${round(r.traffic.aadt,0)}
+v/l/d: ${round(r.traffic.vld,0)}
+Binder: ${round(r.finalBinder,2)} L/m²
+Adjustments: Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}
+Allowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
+Aggregate spread: ${round(r.agg.m2m3,0)} m²/m³${secondText}
+
+Design notes:
+${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
   navigator.clipboard?.writeText(text);
   alert('Summary copied.');
 }
+
 async function init() {
   state.lookups = await fetch('./data/lookups.json').then(r => r.json());
   state.binderMatrix = await fetch('./data/binder-matrix.json').then(r => r.json());
