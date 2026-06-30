@@ -280,7 +280,7 @@ function renderInlineNotes(notes) {
   $$('[data-note-for]').forEach(el => {
     const key = el.dataset.noteFor;
     let matches = [];
-    if (key === 'flIndex') matches = byField.get('Flakiness Index') || [];
+    if (key === 'flIndex') matches = [];
     if (key === 'ald' || key === 'aldMirror') matches = byField.get('ALD') || [];
     if (key === 'sandPatch') matches = byField.get('Surface texture / sand patch') || [];
     if (key === 'aba') matches = byField.get('Binder Abs. by Agg.') || [];
