@@ -58,3 +58,23 @@ input,select,output{font:inherit}input,select{color:var(--ink)}input:focus,selec
 @media(max-width:1120px){.cell-note{position:static;transform:none;margin:4px 8px 4px 0}.value-cell{gap:8px}.traffic-layout{grid-template-columns:1fr}.traffic-layout>*{max-width:390px;width:100%;justify-self:center}}
 @media(max-width:980px){main{padding:12px}.app-header{position:relative;align-items:flex-start;padding:16px}.header-actions{flex-wrap:wrap}.design-grid{grid-template-columns:1fr}.design-panel{overflow-x:auto}.calc-table,.input-blocks,.final-results{min-width:500px}.block.three{grid-template-columns:1fr}.block label{border-right:0;border-bottom:1px solid var(--line-strong)}.block label:last-child{border-bottom:0}.note-chip{font-size:9px;padding:4px 7px}}
 @media print{body,html{background:#fff}.no-print,.app-header,footer,.side-tool{display:none!important}main{max-width:none;padding:0}.sheet-box,.design-panel,.flags{box-shadow:none;border-radius:0;break-inside:avoid}.note-card{box-shadow:none;page-break-inside:avoid}}
+
+/* v21: Double/double first application switches the calculation table into two application columns. */
+.second-val{display:none!important}
+.calc-head{display:grid;grid-template-columns:1.55fr .9fr 1.05fr;min-height:36px;border-bottom:1px solid var(--line-strong);background:linear-gradient(135deg,#071c31,#155a95);color:#fff;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.07em}
+.calc-head span,.calc-head b{display:flex;align-items:center;justify-content:center;padding:9px;border-right:1px solid rgba(255,255,255,.32)}
+.calc-head b:last-child{border-right:0}
+body.double-mode .second-val{display:flex!important}
+body.double-mode .calc-head,
+body.double-mode .calc-table .r,
+body.double-mode .final-results .r{grid-template-columns:1.38fr .68fr .92fr .92fr}
+body.double-mode .calc-table{max-width:840px}
+body.double-mode .final-results{max-width:840px}
+body.double-mode .calc-table output.second-val,
+body.double-mode .calc-table strong.second-val,
+body.double-mode .final-results strong.second-val{align-items:center;justify-content:center;min-height:38px;background:#fff;border-left:1px solid var(--line-strong);font-weight:950;text-align:center}
+body.double-mode .final-results strong.second-val{background:linear-gradient(180deg,#02bb5f,#008541);color:#fff;font-size:23px}
+body.double-mode .calc-table .value-cell{border-right:0}
+body.double-mode .calc-table .r span{font-size:13px}
+body.double-mode .calc-table .r b{font-size:12px}
+@media(max-width:980px){body.double-mode .calc-table,body.double-mode .final-results{min-width:760px}}
