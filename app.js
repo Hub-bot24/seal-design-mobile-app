@@ -82,12 +82,79 @@ function binderFactor(spec, sealType, treatment, binder) {
 }
 function aggregateShapeAdjustment(flIndex) {
   const fi = asNum(flIndex, NaN);
-  if (!Number.isFinite(fi)) return { va: 0, shape: 'Missing', warning: 'Flakiness index is missing, so Va is set to 0.' };
-  if (fi > 35) return { va: 0, shape: 'Very flaky', warning: 'Flakiness index > 35%: Part 4K considers this too flaky and not recommended for sealing. Do not use this design without review.' };
-  if (fi >= 26) return { va: -0.01, shape: 'Flaky', warning: '' };
-  if (fi >= 16) return { va: 0, shape: 'Angular', warning: '' };
-  if (fi >= 10) return { va: 0.01, shape: 'Cubic', warning: '' };
-  return { va: 0.02, shape: 'Very cubic', warning: 'Very cubic aggregate (<10% FI) is not recommended for the bottom layer of a D/D seal because angular interlock may be insufficient.' };
+  if (!Number.isFinite(fi)) return { va: 0, shape: 'Missing', level: 'WARNING', message: 'Flakiness Index is missing. Va has been set to 0 until a tested value is entered.' };
+  if (fi > 35) return { va: 0, shape: 'Very flaky', level: 'WARNING', message: 'Flakiness Index is greater than 35%. Do not accept this aggregate for seal design without designer review.' };
+  if (fi >= 26) return { va: -0.01, shape: 'Flaky', level: 'CHECK', message: 'Flakiness Index is 26–35%. Va = -0.01 applied.' };
+  if (fi >= 16) return { va: 0, shape: 'Angular', level: 'INFO', message: 'Flakiness Index is 16–25%. Va = 0 applied.' };
+  if (fi >= 10) return { va: 0.01, shape: 'Cubic', level: 'INFO', message: 'Flakiness Index is 10–15%. Va = +0.01 applied.' };
+  return { va: 0.02, shape: 'Very cubic', level: 'CHECK', message: 'Flakiness Index is below 10%. Va = +0.02 applied; check suitability, especially for double/double bottom layer interlock.' };
+}
+function note(level, field, message, source = '') {
+  return { level, field, message, source };
+}
+function buildDesignNotes(r) {
+  const notes = [];
+  const spec = norm(r.v.spec);
+  const fi = asNum(r.v.flIndex, NaN);
+  const ald = asNum(r.v.ald, NaN);
+  const ast = asNum(r.v.sandPatch, NaN);
+  const laneSplit = asNum(r.v.laneSplit, 50);
+
+  notes.push(note('INFO', 'Traffic', `Design AADT compounded from ${r.v.baseYear} to ${r.traffic.designYear}; ${round(r.traffic.aadt,0)} used for design traffic.`, 'App traffic calculation'));
+
+  if (spec === 'AGPT04K-26') {
+    notes.push(note('INFO', 'SPEC', '4K mode selected. AGPT04K-26 rules are the reference for flakiness/ALD/voids/binder/aggregate checks.', 'AGPT04K-26'));
+  } else if (spec === 'TN175') {
+    notes.push(note('CHECK', 'SPEC', 'TN175 mode selected. TMR/TN175-specific logic must be validated against TN175 before real use.', 'TN175'));
+  }
+
+  if (!Number.isFinite(ald) || ald <= 0) {
+    notes.push(note('WARNING', 'ALD', 'ALD is missing or zero. Binder rate and aggregate spread cannot be trusted.', 'AGPT04K-26 Section 5.3.1'));
+  } else {
+    notes.push(note('INFO', 'ALD', `ALD ${ald} mm is being used in binder and aggregate spread calculations.`, 'AGPT04K-26 Section 5.3.1'));
+  }
+
+  if (Number.isFinite(fi)) {
+    notes.push(note(r.shape.level, 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
+  } else {
+    notes.push(note('WARNING', 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
+  }
+
+  if (!Number.isFinite(ast)) {
+    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture/sand patch value is missing. Ast has been treated as 0.', 'AGPT04K-26 Table 6.3'));
+  } else if (ast < 0) {
+    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture/sand patch value cannot be negative.', 'Designer check'));
+  } else if (ast > 0.5) {
+    notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance/sand patch input is ${ast}. This is high; review aggregate size and/or treatment selection.`, 'AGPT04K-26 Section 6.2.2 / Table 6.3'));
+  } else if (ast > 0) {
+    notes.push(note('INFO', 'Surface texture / sand patch', `Surface texture allowance/sand patch input ${ast} applied to binder allowance.`, 'AGPT04K-26 Table 6.3'));
+  }
+
+  if (r.ar.note) {
+    notes.push(note('CHECK', 'Surface/Aggregate lookup', r.ar.note, 'Extracted Lookups tab'));
+  }
+
+  if (laneSplit !== 50) {
+    notes.push(note('CHECK', 'Design lane split', `Design lane split is ${laneSplit}%, not 50%. Confirm this is intentional.`, 'Traffic distribution check'));
+  }
+
+  if ((r.shvPct + r.lhvPct) > 100) {
+    notes.push(note('WARNING', 'Traffic breakdown', 'SHV% + LHV% exceeds 100%. LV has been forced to 0, but the input is invalid.', 'Traffic breakdown check'));
+  }
+  if (r.ehvPct > 45) {
+    notes.push(note('WARNING', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. High heavy-vehicle loading: check treatment/binder selection.`, 'AGPT04K-26 Section 5.2.5'));
+  } else if (r.ehvPct > 25) {
+    notes.push(note('CHECK', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. Review heavy vehicle effects and stress conditions.`, 'AGPT04K-26 Section 5.2.5'));
+  }
+
+  if (!r.bf) {
+    notes.push(note('WARNING', 'Binder factor', 'Binder factor not found for this SPEC + TYPE + TREATMENT + BINDER. Do not use the binder rate until mapped/validated.', 'Extracted Lookups tab / AGPT04K-26 Tables 6.4 and 6.5'));
+  }
+  if (r.finalBinder <= 0) {
+    notes.push(note('WARNING', 'Design binder rate', 'Calculated binder rate is zero or negative. Inputs are incomplete, unsupported, or the lookup is missing.', 'Calculation check'));
+  }
+  notes.push(note('CHECK', 'Validation', 'App calculation still needs Excel validation cases before real design use.', 'Project validation rule'));
+  return notes;
 }
 function aggregateRetention(surfaceType, aggregateSize, sandPatch) {
   const sp = asNum(sandPatch);
@@ -124,14 +191,31 @@ function calculate() {
   const modifiedBinder = baseBinder * (bf ?? 0);
   const finalBinder = modifiedBinder + ar.numeric;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, v.ald);
-  const flags = [];
-  if (!bf) flags.push('Binder factor not found for this Spec + Type + Treatment + Binder. Do not use the rate until this is mapped against Excel.');
-  if (shape.warning) flags.push(shape.warning);
-  if (norm(v.spec) === 'AGPT04K-26') flags.push('4K mode: Va now follows AGPT04K-26 Table 6.1 flakiness bands. Binder-factor lookup still needs final 2026 table validation.');
-  if (ar.note) flags.push(ar.note);
-  if (finalBinder <= 0) flags.push('Calculated binder rate is zero or negative. Inputs are incomplete or unsupported.');
-  flags.push('This version is layout-corrected to match your Excel-style screen, but it still needs Excel validation cases before real design use.');
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, flags };
+  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+  result.notes = buildDesignNotes(result);
+  return result;
+}
+function noteIcon(level) {
+  return level === 'WARNING' ? '⚠' : level === 'CHECK' ? '◆' : 'i';
+}
+function renderNoteCard(n) {
+  const source = n.source ? `<small>${safe(n.source)}</small>` : '';
+  return `<div class="note-card ${safe(n.level.toLowerCase())}"><b>${noteIcon(n.level)} ${safe(n.level)} — ${safe(n.field)}</b><span>${safe(n.message)}</span>${source}</div>`;
+}
+function renderInlineNotes(notes) {
+  const byField = new Map();
+  notes.forEach(n => { if (!byField.has(n.field)) byField.set(n.field, []); byField.get(n.field).push(n); });
+  $$('[data-note-for]').forEach(el => {
+    const key = el.dataset.noteFor;
+    let matches = [];
+    if (key === 'flIndex') matches = byField.get('Flakiness Index') || [];
+    if (key === 'ald' || key === 'aldMirror') matches = byField.get('ALD') || [];
+    if (key === 'sandPatch') matches = byField.get('Surface texture / sand patch') || [];
+    const important = matches.find(n => n.level === 'WARNING') || matches.find(n => n.level === 'CHECK') || matches[0];
+    if (!important) { el.innerHTML = ''; el.className = el.className.replace(/\b(info|check|warning)\b/g, '').trim(); return; }
+    el.innerHTML = `${noteIcon(important.level)} ${safe(important.message)}`;
+    el.className = `${el.className.replace(/\b(info|check|warning)\b/g, '').trim()} ${important.level.toLowerCase()}`;
+  });
 }
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 function setVal(name, value) { const el = $(`[name="${name}"]`); if (el) el.value = value; }
@@ -178,7 +262,8 @@ function render(e) {
   setText('aggSpreadOut', round(r.agg.m2m3,0));
   setText('rightTrafficOut', vld);
   setText('rightVfOut', round(r.vf,3).toFixed(3));
-  $('#flagsList').innerHTML = r.flags.map(f => `<div class="flag ${f.startsWith('This version')?'ok':''}">${safe(f)}</div>`).join('');
+  $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
+  renderInlineNotes(r.notes);
   localStorage.setItem('seal-design-form', JSON.stringify(r.v));
 }
 function restore() {
@@ -188,7 +273,7 @@ function restore() {
 }
 function copySummary() {
   const r = calculate();
-  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nFlags: ${r.flags.join(' | ')}`;
+  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
   navigator.clipboard?.writeText(text);
   alert('Summary copied.');
 }
