@@ -1,4 +1,4 @@
-const state = { lookups: null, deferredPrompt: null };
+const state = { lookups: null, binderMatrix: null, deferredPrompt: null };
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -19,10 +19,13 @@ function setOptions(select, values, preferred) {
   if (preferred && values.some(v => norm(v) === norm(preferred))) select.value = values.find(v => norm(v) === norm(preferred));
 }
 function binderRowsForSpec(spec) {
-  // 4K uses the extracted Austroads table. TN175 uses the TMR-specific table bucket.
-  // The workbook extraction labels individual TN rows strangely, so TN175 mode uses all
-  // rows in LUT_Factors4, then filters by seal type/treatment/binder.
-  return norm(spec) === 'TN175' ? tableRows('LUT_Factors4') : tableRows('LUT_Factors');
+  const group = norm(spec) === 'TN175' ? 'TN175' : 'AGPT04K-26';
+  const rows = state.binderMatrix?.rows || [];
+  // Use the workbook Lookups-derived binder matrix as the rulebook. Do not show
+  // binders unless that SPEC + TYPE + TREATMENT combination exists in the matrix.
+  return rows
+    .filter(r => norm(r.spec) === group)
+    .map(r => ({ BF_Type: r.type, BF_Treatment: r.treatment, BF_Binder: r.binder, BF_Result: r.bf }));
 }
 function populateOptions() {
   const specs = ['AGPT04K-26', 'TN175'];
@@ -34,8 +37,17 @@ function populateOptions() {
   updateTreatmentAndBinderOptions();
 }
 function valuesFromRows(rows, field) {
-  return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && String(v).trim() !== ''))]
-    .sort((a,b)=>String(a).localeCompare(String(b)));
+  const out = [];
+  const seen = new Set();
+  rows.forEach(r => {
+    const v = r[field];
+    const key = norm(v);
+    if (v !== undefined && v !== null && String(v).trim() !== '' && !seen.has(key)) {
+      seen.add(key);
+      out.push(v);
+    }
+  });
+  return out;
 }
 function updateTreatmentAndBinderOptions() {
   const spec = $('[name="spec"]')?.value || 'TN175';
@@ -300,6 +312,7 @@ function copySummary() {
 }
 async function init() {
   state.lookups = await fetch('./data/lookups.json').then(r => r.json());
+  state.binderMatrix = await fetch('./data/binder-matrix.json').then(r => r.json());
   populateOptions();
   restore();
   updateTreatmentAndBinderOptions();
