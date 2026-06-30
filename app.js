@@ -6,6 +6,18 @@ const norm = (v) => String(v ?? '').trim().toUpperCase();
 const asNum = (v, fallback = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
 const round = (n, dp = 3) => Number.isFinite(n) ? Number(n.toFixed(dp)) : n;
 
+
+function uiSealTypeToLookupType(value) {
+  const v = norm(value);
+  if (v.includes('2ND')) return 'Double 2nd Coat';
+  if (v.includes('DOUBLE')) return 'Double 1st Coat';
+  return 'Single';
+}
+function uiSealTypeLabel(value) {
+  return norm(value).includes('DOUBLE') ? 'Double Seal' : 'Single Seal';
+}
+function isDoubleSeal(value) { return norm(value).includes('DOUBLE'); }
+
 function uniqueRows(tableName, field) {
   const rows = state.lookups.tables[tableName]?.rows || [];
   return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && String(v).trim() !== ''))]
@@ -35,6 +47,7 @@ function populateOptions() {
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
   setOptions($('[name="aggregateSize2"]'), aggSizes, '7mm');
   setOptions($('[name="surfaceType"]'), surfaces, 'N/A');
+  setOptions($('[name="sealType"]'), ['Single Seal','Double Seal'], 'Single Seal');
   updateTreatmentAndBinderOptions();
 }
 function valuesFromRows(rows, field) {
@@ -60,14 +73,12 @@ function updateTreatmentAndBinderOptions() {
   const ald2El = $('[name="aldMirror2"]');
   const rows = binderRowsForSpec(spec);
 
-  const currentType = typeEl?.value;
-  // The visible first-column design is only allowed to be a Single seal or the first application of a double/double seal.
-  // Double 2nd Coat is calculated automatically as the second column when Double 1st Coat is selected.
-  const types = valuesFromRows(rows, 'BF_Type').filter(v => norm(v) === 'SINGLE' || norm(v).includes('DOUBLE 1ST'));
-  setOptions(typeEl, types, currentType && types.some(v => norm(v) === norm(currentType)) ? currentType : (types.find(v => norm(v).includes('DOUBLE 1ST')) || types[0]));
+  const currentType = uiSealTypeLabel(typeEl?.value || 'Single Seal');
+  setOptions(typeEl, ['Single Seal', 'Double Seal'], currentType);
+  const lookupType = uiSealTypeToLookupType(typeEl?.value);
 
   const currentTreatment = treatmentEl?.value;
-  const typeRows = rows.filter(r => norm(r.BF_Type) === norm(typeEl?.value));
+  const typeRows = rows.filter(r => norm(r.BF_Type) === norm(lookupType));
   const treatments = valuesFromRows(typeRows, 'BF_Treatment');
   setOptions(treatmentEl, treatments, currentTreatment && treatments.some(v => norm(v) === norm(currentTreatment)) ? currentTreatment : 'Conventional Seal');
 
@@ -105,7 +116,7 @@ function compoundTraffic({ initialAadt, growthRate, baseYear, laneSplit }) {
 }
 function vehicleFactor(vld, sealType) {
   if (!vld) return 0;
-  const st = norm(sealType);
+  const st = norm(uiSealTypeToLookupType(sealType));
   if (st.includes('DOUBLE 1ST')) return round(vld <= 500 ? 0.2359 * Math.pow(vld, -0.084) : 0.2385 * Math.pow(vld, -0.086), 3);
   return round(vld <= 110 ? 0.388 * Math.pow(110, -0.1304) : vld <= 500 ? 0.388 * Math.pow(vld, -0.1304) : 0.3687 * Math.pow(vld, -0.1226), 3);
 }
@@ -128,7 +139,8 @@ function heavyVehicleGradientCorrection(ehvPct, gradient, braking) {
 }
 function binderFactor(spec, sealType, treatment, binder) {
   const rows = binderRowsForSpec(spec);
-  const matches = rows.filter(r => norm(r.BF_Type) === norm(sealType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
+  const lookupType = uiSealTypeToLookupType(sealType);
+  const matches = rows.filter(r => norm(r.BF_Type) === norm(lookupType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
   const result = matches.reduce((sum, r) => sum + asNum(r.BF_Result, 0), 0);
   return result || null;
 }
@@ -333,7 +345,7 @@ function embedmentAllowance(vld, ballpin) {
 }
 
 
-function isDoubleFirst(sealType) { return norm(sealType).includes('DOUBLE 1ST'); }
+function isDoubleFirst(sealType) { return isDoubleSeal(sealType); }
 function secondCoatAggregate(firstAgg) {
   const a = norm(firstAgg);
   if (a.includes('14')) return '7mm';
@@ -350,7 +362,7 @@ function defaultAldForAggregate(agg, fallback = 3.8) {
   return fallback;
 }
 function aggregateSpreadRate(spec, sealType, treatment, binder, ald) {
-  const st = norm(sealType), tr = norm(treatment), b = norm(binder);
+  const st = norm(uiSealTypeToLookupType(sealType)), tr = norm(treatment), b = norm(binder);
   let base = 950;
   if (tr === 'SAMI' || tr.includes('WATERPROOFING')) base = 1000;
   else if (tr.includes('UNMODIFIED EMULSION') || tr.includes('HI-FLOAT') || tr.includes('PRIMER')) base = 800;
@@ -412,7 +424,7 @@ function calculate() {
   }
   result.notes = buildDesignNotes(result);
   if (result.second) {
-    result.notes.unshift(note('APPLIED', 'Double/double second application', `Double 1st Coat selected. A second calculation column has been applied as ${result.secondLabel}. The second coat uses its own ALD, flakiness index and binder. Ast, Ap and Ae are marked N/A; Aba2 remains optional and defaults to 0.`, 'AGPT04K-26 Section 5.5.2'));
+    result.notes.unshift(note('APPLIED', 'Double/double second application', `Double Seal selected. A second calculation column has been applied as ${result.secondLabel}. The second coat uses its own ALD, flakiness index and binder. Ast, Ap and Ae are marked N/A; Aba2 remains optional and defaults to 0.`, 'AGPT04K-26 Section 5.5.2'));
     result.notes.push(...buildDesignNotes(result.second));
   }
   return result;
@@ -471,7 +483,8 @@ function render(e) {
   const r = calculate();
   const doubleMode = Boolean(r.second);
   document.body.classList.toggle('double-mode', doubleMode);
-  setText('primaryColHead', r.v.sealType || 'Selected coat');
+  setText('primaryColHead', isDoubleFirst(r.v.sealType) ? 'Double 1st Coat' : 'Single');
+  setText('aggOneTitle', isDoubleFirst(r.v.sealType) ? 'First coat aggregate' : 'Single seal aggregate');
   setText('secondColHead', r.second ? r.secondLabel : 'Second coat');
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
@@ -537,7 +550,7 @@ function copySummary() {
   const secondText = r.second ? `
 
 Second coat:
-Type: ${r.second.v.sealType}
+Type: Double 2nd Coat
 Binder: ${r.second.v.binder}
 Aggregate: ${r.second.v.aggregateSize}
 ALD: ${round(r.second.ald,2)} mm
@@ -549,7 +562,7 @@ Allowances: Ast N/A + Aba2 ${round(r.second.aba,2)} + Ap N/A + Ae N/A` : '';
 Project: ${r.v.projectName}
 Road: ${r.v.roadName}
 Spec: ${r.v.spec}
-Type: ${r.v.sealType}
+Type: ${uiSealTypeLabel(r.v.sealType)}
 Treatment: ${r.v.treatment}
 Binder: ${r.v.binder}
 Aggregate: ${r.v.aggregateSize}
