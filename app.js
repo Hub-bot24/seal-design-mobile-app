@@ -283,11 +283,13 @@ function renderInlineNotes(notes) {
     if (key === 'flIndex') matches = byField.get('Flakiness Index') || [];
     if (key === 'ald' || key === 'aldMirror') matches = byField.get('ALD') || [];
     if (key === 'sandPatch') matches = byField.get('Surface texture / sand patch') || [];
-    if (key === 'ap') matches = (byField.get('Binder Abs. by Pav.') || []).concat(byField.get('Binder Abs. by Agg.') || [], byField.get('Cutback binder / AMC') || []);
-    if (key === 'binder') matches = (byField.get('Cutback binder / AMC') || []).concat(byField.get('Binder factor') || []);
+    if (key === 'aba') matches = byField.get('Binder Abs. by Agg.') || [];
+    if (key === 'ap') matches = (byField.get('Binder Abs. by Pav.') || []).concat(byField.get('Cutback binder / AMC') || []);
+    if (key === 'ae') matches = byField.get('Embedment') || [];
+    if (key === 'binder') matches = byField.get('Binder factor') || [];
 
     const important = matches.find(n => n.level === 'WARNING') || matches.find(n => n.level === 'CHECK') || matches[0];
-    const baseClass = el.className.includes('calc-note-row') ? 'calc-note-row' : 'field-note';
+    const baseClass = el.className.includes('cell-note') ? 'cell-note' : (el.className.includes('calc-note-row') ? 'calc-note-row' : 'field-note');
     if (!important) {
       el.innerHTML = '';
       el.className = `${baseClass} is-empty`;
