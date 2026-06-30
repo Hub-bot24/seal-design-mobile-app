@@ -116,10 +116,10 @@ function aggregateShapeAdjustment(flIndex) {
   const fi = asNum(flIndex, NaN);
   if (!Number.isFinite(fi)) return { va: 0, shape: 'Missing', level: 'WARNING', message: 'Flakiness Index is missing. Va has been set to 0 until a tested value is entered.' };
   if (fi > 35) return { va: 0, shape: 'Very flaky', level: 'WARNING', message: 'Flakiness Index is greater than 35%. Do not accept this aggregate for seal design without designer review.' };
-  if (fi >= 26) return { va: -0.01, shape: 'Flaky', level: 'CHECK', message: 'Flakiness Index is 26–35%. Va = -0.01 applied.' };
-  if (fi >= 16) return { va: 0, shape: 'Angular', level: 'INFO', message: 'Flakiness Index is 16–25%. Va = 0 applied.' };
-  if (fi >= 10) return { va: 0.01, shape: 'Cubic', level: 'INFO', message: 'Flakiness Index is 10–15%. Va = +0.01 applied.' };
-  return { va: 0.02, shape: 'Very cubic', level: 'CHECK', message: 'Flakiness Index is below 10%. Va = +0.02 applied; check suitability, especially for double/double bottom layer interlock.' };
+  if (fi >= 26) return { va: -0.01, shape: 'Flaky', level: 'APPLIED', message: 'Flakiness Index is 26–35%. Va = -0.01 applied.' };
+  if (fi >= 16) return { va: 0, shape: 'Angular', level: 'APPLIED', message: 'Flakiness Index is 16–25%. Va = 0 applied.' };
+  if (fi >= 10) return { va: 0.01, shape: 'Cubic', level: 'APPLIED', message: 'Flakiness Index is 10–15%. Va = +0.01 applied.' };
+  return { va: 0.02, shape: 'Very cubic', level: 'APPLIED', message: 'Flakiness Index is below 10%. Va = +0.02 applied; check suitability, especially for double/double bottom layer interlock.' };
 }
 function note(level, field, message, source = '') {
   return { level, field, message, source };
@@ -146,8 +146,9 @@ function buildDesignNotes(r) {
   const notes = [];
   const spec = norm(r.v.spec);
   const fi = asNum(r.v.flIndex, NaN);
-  const ald = asNum(r.v.ald, NaN);
-  const ast = asNum(r.v.sandPatch, NaN);
+  const ald = asNum(r.v.aldMirror, NaN);
+  const textureInput = asNum(r.v.surfaceTexture, NaN);
+  const ast = r.ar.numeric;
   const laneSplit = asNum(r.v.laneSplit, 50);
   const aba = allowanceNum(r.v.aba);
   const ap = allowanceNum(r.v.ap);
@@ -173,26 +174,33 @@ function buildDesignNotes(r) {
     notes.push(note('WARNING', 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
   }
 
-  if (!Number.isFinite(ast)) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture/sand patch value is missing. Ast has been treated as 0.', 'AGPT04K-26 Table 6.3'));
-  } else if (ast < 0) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture/sand patch value cannot be negative.', 'Designer check'));
+  if (!Number.isFinite(textureInput)) {
+    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input is missing. Ast lookup has been treated as 0.', 'Lookups tab / AGPT04K-26 Table 6.3'));
+  } else if (textureInput < 0) {
+    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture input cannot be negative.', 'Designer check'));
+  }
+  if (r.ar.value === 'Note 1') {
+    notes.push(note('CHECK', 'Surface texture / sand patch', 'Surface texture lookup returned Note 1: embedment considerations are dominant. Review embedment allowance and treatment suitability.', 'Lookups tab / AGPT04K-26 surface texture lookup'));
+  } else if (r.ar.value === 'Note 2') {
+    notes.push(note('WARNING', 'Surface texture / sand patch', 'Surface texture lookup returned Note 2: specialised treatments may be necessary. Do not treat this as a normal Ast allowance.', 'Lookups tab / AGPT04K-26 surface texture lookup'));
   } else if (ast > 0.5) {
-    notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance/sand patch input is ${ast}. This is high; review aggregate size and/or treatment selection.`, 'AGPT04K-26 Section 6.2.2 / Table 6.3'));
+    notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² from the lookup. This is high; review aggregate size and/or treatment selection.`, 'Lookups tab / AGPT04K-26 Table 6.3'));
+  } else if (ast > 0) {
+    notes.push(note('APPLIED', 'Surface texture / sand patch', `Surface texture allowance Ast = ${ast} L/m² applied from the lookup.`, 'Lookups tab / AGPT04K-26 Table 6.3'));
   }
 
   if (ap > 0.2) {
     notes.push(note('WARNING', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m². 4K says allowances above 0.2 L/m² should trigger consideration of an alternative treatment.`, 'AGPT04K-26 Section 6.2.4'));
   } else if (ap > 0) {
-    notes.push(note('CHECK', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m² applied. Confirm this matches pavement type and surface condition.`, 'AGPT04K-26 Section 6.2.4'));
+    notes.push(note('APPLIED', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m² applied. Confirm this matches pavement type and surface condition.`, 'AGPT04K-26 Section 6.2.4'));
   }
   if (aba > 0.1) {
     notes.push(note('WARNING', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m². 4K says aggregate absorption, if required, should not usually exceed 0.1 L/m².`, 'AGPT04K-26 Section 6.2.4'));
   } else if (aba > 0) {
-    notes.push(note('CHECK', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m² applied. Confirm aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Section 6.2.4'));
+    notes.push(note('APPLIED', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m² applied. Confirm aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Section 6.2.4'));
   }
   if (ae !== 0) {
-    notes.push(note('CHECK', 'Embedment', `Embedment allowance Ae = ${ae} L/m² applied. Confirm ball penetration/substrate conditions and designer judgement.`, 'AGPT04K-26 Section 6.2.3'));
+    notes.push(note('APPLIED', 'Embedment', `Embedment allowance Ae = ${ae} L/m² applied. Confirm ball penetration/substrate conditions and designer judgement.`, 'AGPT04K-26 Section 6.2.3'));
   }
 
   if (r.ar.note) {
@@ -250,21 +258,23 @@ function calculate() {
   const vt = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
   const shape = aggregateShapeAdjustment(v.flIndex);
   const bf = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
-  const ar = aggregateRetention(v.surfaceType, v.aggregateSize, v.sandPatch);
-  const designVf = vf + shape.va + vt;
-  const baseBinder = designVf * asNum(v.ald);
+  const ar = aggregateRetention(v.surfaceType, v.aggregateSize, v.surfaceTexture);
+  const otherAdjustment = allowanceNum(v.otherAdjustment);
+  const ald = asNum(v.aldMirror, 0);
+  const designVf = vf + shape.va + vt + otherAdjustment;
+  const baseBinder = designVf * ald;
   const modifiedBinder = baseBinder * (bf ?? 0);
   const aba = allowanceNum(v.aba);
   const ap = allowanceNum(v.ap);
   const ae = allowanceNum(v.ae);
   const finalBinder = modifiedBinder + ar.numeric + aba + ap + ae;
-  const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, v.ald);
-  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+  const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald);
+  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
   result.notes = buildDesignNotes(result);
   return result;
 }
 function noteIcon(level) {
-  return level === 'WARNING' ? '⚠' : level === 'CHECK' ? '◆' : 'i';
+  return level === 'WARNING' ? '⚠' : level === 'CHECK' ? '◆' : level === 'APPLIED' ? '✓' : 'i';
 }
 function renderNoteCard(n) {
   const source = n.source ? `<small>${safe(n.source)}</small>` : '';
@@ -303,17 +313,10 @@ function renderInlineNotes(notes) {
 
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 function setVal(name, value) { const el = $(`[name="${name}"]`); if (el) el.value = value; }
-function syncAld(source) {
-  const ald = $('[name="ald"]');
-  const mirror = $('[name="aldMirror"]');
-  if (!ald || !mirror) return;
-  if (source === mirror) ald.value = mirror.value;
-  else mirror.value = ald.value;
-}
+function syncAld() { /* ALD is now entered once in the AGGREGATE block and pulled into the calculation table. */ }
 function render(e) {
   if (['spec','sealType','treatment'].includes(e?.target?.name)) updateTreatmentAndBinderOptions();
-  if (e?.target?.name === 'aldMirror') syncAld(e.target);
-  if (e?.target?.name === 'ald') syncAld(e.target);
+
   const r = calculate();
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
@@ -335,11 +338,12 @@ function render(e) {
   setText('vfOut', round(r.vf,3).toFixed(3));
   setText('vaOut', round(r.shape.va,3));
   setText('vtOut', round(r.vt,3));
-  setText('otherOut', '0');
   setText('designVfOut', round(r.designVf,3).toFixed(3));
+  setText('aldCalcOut', round(r.ald,2));
   setText('baseBinderOut', round(r.baseBinder,2).toFixed(2));
   setText('bfOut', r.bf ?? '0.0');
   setText('modifiedBinderOut', round(r.modifiedBinder,2).toFixed(2));
+  setText('astOut', round(r.ar.numeric,2));
   setText('abaOut', round(r.aba,2));
   setText('apOut', round(r.ap,2));
   setText('embedOut', round(r.ae,2));
@@ -358,7 +362,7 @@ function restore() {
 }
 function copySummary() {
   const r = calculate();
-  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAllowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${round(r.ae,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
+  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAdjustments: Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}\nAllowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${round(r.ae,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
   navigator.clipboard?.writeText(text);
   alert('Summary copied.');
 }
