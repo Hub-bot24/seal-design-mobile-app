@@ -1,6 +1,6 @@
 {
   "source": "GithubSeal Design - Final.xlsm / Lookups tab",
-  "note": "Binder options are generated from the extracted Lookups tab. TN175 uses the TN rows as one TMR group because the workbook labels TN rows individually (TN175, TN176, etc.) but they form one binder-factor table.",
+  "note": "Binder options are generated from the workbook PRODUCT LIST plus the treatment/type validity table. This prevents TN175 Double 1st/2nd Conventional Seal from losing AMC5/AMC6/AMC7, which are present in the TN175 Conventional Seal product list.",
   "rows": [
     {
       "spec": "AGPT04K-26",
@@ -32,59 +32,24 @@
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C170",
+      "binder": "AMC5",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C240",
+      "binder": "AMC6",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C320",
+      "binder": "AMC7",
       "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "Conventional Seal",
-      "binder": "M500",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C170",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C240",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C320",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "M500",
-      "bf": 1.1
     },
     {
       "spec": "AGPT04K-26",
@@ -187,6 +152,69 @@
     {
       "spec": "AGPT04K-26",
       "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Single",
       "treatment": "SAMI",
       "binder": "S25E",
       "bf": 1.6
@@ -222,366 +250,338 @@
     {
       "spec": "AGPT04K-26",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15E",
+      "treatment": "Conventional Seal",
+      "binder": "C170",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S20E",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S10E",
+      "treatment": "Conventional Seal",
+      "binder": "C240",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S35E",
+      "treatment": "Conventional Seal",
+      "binder": "C320",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15R",
+      "treatment": "Conventional Seal",
+      "binder": "M500",
       "bf": 1.1
     },
     {
       "spec": "AGPT04K-26",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15E",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S20E",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S10E",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S35E",
-      "bf": 1.0
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC00",
-      "bf": 0.3
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC0",
-      "bf": 0.5
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC1",
-      "bf": 0.8
-    },
-    {
-      "spec": "AGPT04K-26",
-      "type": "Single",
       "treatment": "Conventional Seal",
       "binder": "AMC5",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Single",
+      "type": "Double 1st Coat",
       "treatment": "Conventional Seal",
       "binder": "AMC6",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Single",
+      "type": "Double 1st Coat",
       "treatment": "Conventional Seal",
       "binder": "AMC7",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "HaTelit",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S10E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S35E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S20E",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
       "binder": "C170",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "HUESKER Chipseal Grid A10",
-      "binder": "C170",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "C240",
       "bf": 1.0
     },
     {
       "spec": "AGPT04K-26",
-      "type": "Single",
-      "treatment": "HUESKER Chipseal Grid A15",
-      "binder": "C170",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "C320",
       "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "M500",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC5",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC6",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC7",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S10E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S35E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15E",
+      "bf": 1.0
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S20E",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "AGPT04K-26",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.3
     },
     {
       "spec": "TN175",
@@ -613,59 +613,24 @@
     },
     {
       "spec": "TN175",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C170",
+      "binder": "AMC5",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C240",
+      "binder": "AMC6",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Double 1st Coat",
+      "type": "Single",
       "treatment": "Conventional Seal",
-      "binder": "C320",
+      "binder": "AMC7",
       "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "Conventional Seal",
-      "binder": "M500",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C170",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C240",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "C320",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "Conventional Seal",
-      "binder": "M500",
-      "bf": 1.1
     },
     {
       "spec": "TN175",
@@ -778,6 +743,48 @@
       "treatment": "HSS1-H",
       "binder": "S15RF",
       "bf": 1.11
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.31
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.31
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.31
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.31
     },
     {
       "spec": "TN175",
@@ -797,34 +804,6 @@
       "spec": "TN175",
       "type": "Single",
       "treatment": "Interlayer Bond Waterproofing",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Interlayer Bond Waterproofing",
-      "binder": "S15R3",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Interlayer Bond Waterproofing",
-      "binder": "S15RF3,",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Interlayer Bond Waterproofing",
-      "binder": "S18RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Interlayer Bond Waterproofing",
       "binder": "S25E",
       "bf": 1.3
     },
@@ -845,359 +824,338 @@
     {
       "spec": "TN175",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15E",
+      "treatment": "Conventional Seal",
+      "binder": "C170",
       "bf": 1.0
     },
     {
       "spec": "TN175",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S20E",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S10E",
+      "treatment": "Conventional Seal",
+      "binder": "C240",
       "bf": 1.0
     },
     {
       "spec": "TN175",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S35E",
+      "treatment": "Conventional Seal",
+      "binder": "C320",
       "bf": 1.0
     },
     {
       "spec": "TN175",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15R",
+      "treatment": "Conventional Seal",
+      "binder": "M500",
       "bf": 1.1
     },
     {
       "spec": "TN175",
       "type": "Double 1st Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15E",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S20E",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-H",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S10E",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S35E",
-      "bf": 1.0
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15R",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "HSS2-M",
-      "binder": "S15RF",
-      "bf": 1.1
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S9R",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-S",
-      "binder": "S9RF",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.31
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.31
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.31
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.31
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-S",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 1st Coat",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S10E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S35E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-S",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15E",
-      "bf": 1.2
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S20E",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15R",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Double 2nd Coat",
-      "treatment": "SAM-R",
-      "binder": "S15RF",
-      "bf": 1.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC00",
-      "bf": 0.3
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC0",
-      "bf": 0.5
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
-      "treatment": "Prime",
-      "binder": "AMC1",
-      "bf": 0.8
-    },
-    {
-      "spec": "TN175",
-      "type": "Single",
       "treatment": "Conventional Seal",
       "binder": "AMC5",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Single",
+      "type": "Double 1st Coat",
       "treatment": "Conventional Seal",
       "binder": "AMC6",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Single",
+      "type": "Double 1st Coat",
       "treatment": "Conventional Seal",
       "binder": "AMC7",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Single",
-      "treatment": "HaTelit",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S10E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S35E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S20E",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
       "binder": "C170",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Single",
-      "treatment": "HUESKER Chipseal Grid A10",
-      "binder": "C170",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "C240",
       "bf": 1.0
     },
     {
       "spec": "TN175",
-      "type": "Single",
-      "treatment": "HUESKER Chipseal Grid A15",
-      "binder": "C170",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "C320",
       "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "M500",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC5",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC6",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binder": "AMC7",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S10E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S35E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15E",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S20E",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15R",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binder": "S15RF",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S10E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S35E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binder": "S15RF",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15E",
+      "bf": 1.2
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S20E",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15R",
+      "bf": 1.3
+    },
+    {
+      "spec": "TN175",
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binder": "S15RF",
+      "bf": 1.3
     }
   ]
 }
