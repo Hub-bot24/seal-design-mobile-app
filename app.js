@@ -124,6 +124,15 @@ function aggregateShapeAdjustment(flIndex) {
 function note(level, field, message, source = '') {
   return { level, field, message, source };
 }
+function isCutbackBinder(binder) {
+  const b = norm(binder);
+  // AMC5/AMC6/AMC7 and field blended cutback grades must trigger allowance notes.
+  return /^AMC\s*\d+/.test(b) || b.includes('CUTBACK') || b.includes('CUT BACK');
+}
+function allowanceNum(v) {
+  const n = asNum(v, 0);
+  return Number.isFinite(n) ? n : 0;
+}
 function buildDesignNotes(r) {
   const notes = [];
   const spec = norm(r.v.spec);
@@ -131,6 +140,10 @@ function buildDesignNotes(r) {
   const ald = asNum(r.v.ald, NaN);
   const ast = asNum(r.v.sandPatch, NaN);
   const laneSplit = asNum(r.v.laneSplit, 50);
+  const aba = allowanceNum(r.v.aba);
+  const ap = allowanceNum(r.v.ap);
+  const ae = allowanceNum(r.v.ae);
+  const cutback = isCutbackBinder(r.v.binder);
 
   notes.push(note('INFO', 'Traffic', `Design AADT compounded from ${r.v.baseYear} to ${r.traffic.designYear}; ${round(r.traffic.aadt,0)} used for design traffic.`, 'App traffic calculation'));
 
@@ -138,6 +151,13 @@ function buildDesignNotes(r) {
     notes.push(note('INFO', 'SPEC', '4K mode selected. AGPT04K-26 rules are the reference for flakiness/ALD/voids/binder/aggregate checks.', 'AGPT04K-26'));
   } else if (spec === 'TN175') {
     notes.push(note('CHECK', 'SPEC', 'TN175 mode selected. TMR/TN175-specific logic must be validated against TN175 before real use.', 'TN175'));
+  }
+
+  if (cutback) {
+    notes.push(note('CHECK', 'Cutback binder / AMC', `${r.v.binder} selected. Check whether a +0.1 L/m² allowance is required for binder absorption/porous pavement conditions. Do not add it blindly; apply it in Ap or Aba only when the pavement/aggregate condition justifies it. Also confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
+    if (ap === 0 && aba === 0) {
+      notes.push(note('CHECK', 'Binder absorption allowance', 'AMC/cutback selected with Aba and Ap both set to 0. If this is an initial seal directly on granular/unbound or porous pavement, consider +0.1 to +0.2 L/m² for pavement absorption. Aggregate absorption, if required, usually should not exceed +0.1 L/m².', 'AGPT04K-26 Section 6.2.4'));
+    }
   }
 
   if (!Number.isFinite(ald) || ald <= 0) {
@@ -158,6 +178,20 @@ function buildDesignNotes(r) {
     notes.push(note('WARNING', 'Surface texture / sand patch', `Surface texture allowance/sand patch input is ${ast}. This is high; review aggregate size and/or treatment selection.`, 'AGPT04K-26 Section 6.2.2 / Table 6.3'));
   } else if (ast > 0) {
     notes.push(note('INFO', 'Surface texture / sand patch', `Surface texture allowance/sand patch input ${ast} applied to binder allowance.`, 'AGPT04K-26 Table 6.3'));
+  }
+
+  if (ap > 0.2) {
+    notes.push(note('WARNING', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m². 4K says allowances above 0.2 L/m² should trigger consideration of an alternative treatment.`, 'AGPT04K-26 Section 6.2.4'));
+  } else if (ap > 0) {
+    notes.push(note('CHECK', 'Binder Abs. by Pav.', `Pavement absorption allowance Ap = ${ap} L/m² applied. Confirm this matches pavement type and whether the surface is granular, cementitious, bitumen stabilised, chemical stabilised, or aged/open asphalt/microsurfacing.`, 'AGPT04K-26 Section 6.2.4'));
+  }
+  if (aba > 0.1) {
+    notes.push(note('WARNING', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m². 4K says aggregate absorption, if required, should not usually exceed 0.1 L/m².`, 'AGPT04K-26 Section 6.2.4'));
+  } else if (aba > 0) {
+    notes.push(note('CHECK', 'Binder Abs. by Agg.', `Aggregate absorption allowance Aba = ${aba} L/m² applied. Confirm aggregate is absorptive/porous/vesicular and tested.`, 'AGPT04K-26 Section 6.2.4'));
+  }
+  if (ae !== 0) {
+    notes.push(note('CHECK', 'Embedment', `Embedment allowance Ae = ${ae} L/m² applied. Confirm ball penetration/substrate conditions and designer judgement.`, 'AGPT04K-26 Section 6.2.3'));
   }
 
   if (r.ar.note) {
@@ -221,9 +255,12 @@ function calculate() {
   const designVf = vf + shape.va + vt;
   const baseBinder = designVf * asNum(v.ald);
   const modifiedBinder = baseBinder * (bf ?? 0);
-  const finalBinder = modifiedBinder + ar.numeric;
+  const aba = allowanceNum(v.aba);
+  const ap = allowanceNum(v.ap);
+  const ae = allowanceNum(v.ae);
+  const finalBinder = modifiedBinder + ar.numeric + aba + ap + ae;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, v.ald);
-  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
   result.notes = buildDesignNotes(result);
   return result;
 }
@@ -243,6 +280,8 @@ function renderInlineNotes(notes) {
     if (key === 'flIndex') matches = byField.get('Flakiness Index') || [];
     if (key === 'ald' || key === 'aldMirror') matches = byField.get('ALD') || [];
     if (key === 'sandPatch') matches = byField.get('Surface texture / sand patch') || [];
+    if (key === 'ap') matches = (byField.get('Binder absorption allowance') || []).concat(byField.get('Binder Abs. by Pav.') || [], byField.get('Cutback binder / AMC') || []);
+    if (key === 'binder') matches = (byField.get('Cutback binder / AMC') || []).concat(byField.get('Binder selection') || [], byField.get('Binder factor') || []);
     const important = matches.find(n => n.level === 'WARNING') || matches.find(n => n.level === 'CHECK') || matches[0];
     if (!important) { el.innerHTML = ''; el.className = el.className.replace(/\b(info|check|warning)\b/g, '').trim(); return; }
     el.innerHTML = `${noteIcon(important.level)} ${safe(important.message)}`;
@@ -288,9 +327,9 @@ function render(e) {
   setText('baseBinderOut', round(r.baseBinder,2).toFixed(2));
   setText('bfOut', r.bf ?? '0.0');
   setText('modifiedBinderOut', round(r.modifiedBinder,2).toFixed(2));
-  setText('abaOut', '0');
-  setText('apOut', '0');
-  setText('embedOut', '0');
+  setText('abaOut', round(r.aba,2));
+  setText('apOut', round(r.ap,2));
+  setText('embedOut', round(r.ae,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
   setText('aggSpreadOut', round(r.agg.m2m3,0));
   setText('rightTrafficOut', vld);
@@ -306,7 +345,7 @@ function restore() {
 }
 function copySummary() {
   const r = calculate();
-  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
+  const text = `Spray seal design summary\nProject: ${r.v.projectName}\nRoad: ${r.v.roadName}\nSpec: ${r.v.spec}\nType: ${r.v.sealType}\nTreatment: ${r.v.treatment}\nBinder: ${r.v.binder}\nAggregate: ${r.v.aggregateSize}\nClient AADT: ${r.v.initialAadt}\nDesign AADT: ${round(r.traffic.aadt,0)}\nv/l/d: ${round(r.traffic.vld,0)}\nBinder: ${round(r.finalBinder,2)} L/m²\nAllowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${round(r.ae,2)} L/m²\nAggregate spread: ${round(r.agg.m2m3,0)} m²/m³\nDesign notes:\n${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
   navigator.clipboard?.writeText(text);
   alert('Summary copied.');
 }
