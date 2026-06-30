@@ -57,8 +57,10 @@ function updateTreatmentAndBinderOptions() {
   const rows = binderRowsForSpec(spec);
 
   const currentType = typeEl?.value;
-  const types = valuesFromRows(rows, 'BF_Type');
-  setOptions(typeEl, types, currentType && types.some(v => norm(v) === norm(currentType)) ? currentType : 'Double 1st Coat');
+  // The visible first-column design is only allowed to be a Single seal or the first application of a double/double seal.
+  // Double 2nd Coat is calculated automatically as the second column when Double 1st Coat is selected.
+  const types = valuesFromRows(rows, 'BF_Type').filter(v => norm(v) === 'SINGLE' || norm(v).includes('DOUBLE 1ST'));
+  setOptions(typeEl, types, currentType && types.some(v => norm(v) === norm(currentType)) ? currentType : (types.find(v => norm(v).includes('DOUBLE 1ST')) || types[0]));
 
   const currentTreatment = treatmentEl?.value;
   const typeRows = rows.filter(r => norm(r.BF_Type) === norm(typeEl?.value));
@@ -298,6 +300,23 @@ function embedmentAllowance(vld, ballpin) {
   return { value: ae, numeric: ae, display: String(round(ae, 2)), note: '' };
 }
 
+
+function isDoubleFirst(sealType) { return norm(sealType).includes('DOUBLE 1ST'); }
+function secondCoatAggregate(firstAgg) {
+  const a = norm(firstAgg);
+  if (a.includes('14')) return '7mm';
+  if (a.includes('10')) return '7mm';
+  if (a.includes('7')) return '5mm';
+  return '7mm';
+}
+function defaultAldForAggregate(agg, fallback = 3.8) {
+  const a = norm(agg);
+  if (a.includes('14')) return 8.4;
+  if (a.includes('10')) return 5.7;
+  if (a.includes('7')) return 3.8;
+  if (a.includes('5')) return 2.8;
+  return fallback;
+}
 function aggregateSpreadRate(spec, sealType, treatment, binder, ald) {
   const st = norm(sealType), tr = norm(treatment), b = norm(binder);
   let base = 950;
@@ -309,8 +328,7 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald) {
   const m2m3 = base / Math.max(asNum(ald, 1), 0.1);
   return { base, m2m3 };
 }
-function calculate() {
-  const v = formValues();
+function calculateCoat(v) {
   const shvPct = Math.max(0, asNum(v.shvPct));
   const lhvPct = Math.max(0, asNum(v.lhvPct));
   const hvPct = Math.min(100, shvPct + lhvPct);
@@ -332,8 +350,28 @@ function calculate() {
   const ae = embedmentAllowance(traffic.vld, v.ballpin);
   const finalBinder = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald);
-  const result = { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+}
+function calculate() {
+  const v = formValues();
+  const result = calculateCoat(v);
+  if (isDoubleFirst(v.sealType)) {
+    const secondAgg = secondCoatAggregate(v.aggregateSize);
+    const secondV = {
+      ...v,
+      sealType: 'Double 2nd Coat',
+      aggregateSize: secondAgg,
+      aldMirror: defaultAldForAggregate(secondAgg, asNum(v.aldMirror, 3.8)),
+      // The second coat in the spreadsheet uses no surface texture allowance.
+      surfaceTexture: v.surfaceTexture
+    };
+    result.second = calculateCoat(secondV);
+    result.secondLabel = `Double 2nd Coat / ${secondAgg}`;
+  }
   result.notes = buildDesignNotes(result);
+  if (result.second) {
+    result.notes.unshift(note('APPLIED', 'Double/double second application', `Double 1st Coat selected. A second calculation column has been applied as ${result.secondLabel}. The second column is not manually selected in the first-coat dropdown.`, 'Double/double design layout rule'));
+  }
   return result;
 }
 function noteIcon(level) {
@@ -381,6 +419,10 @@ function render(e) {
   if (['spec','sealType','treatment'].includes(e?.target?.name)) updateTreatmentAndBinderOptions();
 
   const r = calculate();
+  const doubleMode = Boolean(r.second);
+  document.body.classList.toggle('double-mode', doubleMode);
+  setText('primaryColHead', r.v.sealType || 'Selected coat');
+  setText('secondColHead', r.second ? r.secondLabel : 'Second coat');
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
   const lv = round(r.traffic.vld * (r.lvPct / 100), 1);
@@ -412,6 +454,23 @@ function render(e) {
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
   setText('aggSpreadOut', round(r.agg.m2m3,0));
+  const s2 = r.second;
+  setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
+  setText('vfOut2', s2 ? round(s2.vf,3).toFixed(3) : '');
+  setText('vaOut2', s2 ? round(s2.shape.va,3) : '');
+  setText('vtOut2', s2 ? round(s2.vt,3) : '');
+  setText('otherAdjustmentOut2', s2 ? round(s2.otherAdjustment,3) : '');
+  setText('designVfOut2', s2 ? round(s2.designVf,3).toFixed(3) : '');
+  setText('aldCalcOut2', s2 ? round(s2.ald,2) : '');
+  setText('baseBinderOut2', s2 ? round(s2.baseBinder,2).toFixed(2) : '');
+  setText('bfOut2', s2 ? (s2.bf ?? '0.0') : '');
+  setText('modifiedBinderOut2', s2 ? round(s2.modifiedBinder,2).toFixed(2) : '');
+  setText('astOut2', s2 ? (s2.ar.display || (s2.ar.numeric === 0 ? '0' : round(s2.ar.numeric,2))) : '');
+  setText('abaOut2', s2 ? round(s2.aba,2) : '');
+  setText('apOut2', s2 ? round(s2.ap,2) : '');
+  setText('embedOut2', s2 ? (s2.ae.display || round(s2.ae.numeric,2)) : '');
+  setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
+  setText('aggSpreadOut2', s2 ? round(s2.agg.m2m3,0) : '');
   setText('rightTrafficOut', vld);
   setText('rightVfOut', round(r.vf,3).toFixed(3));
   $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
