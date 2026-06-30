@@ -8,3 +8,18 @@
 .breakdown-box span{padding:4px 6px}
 .breakdown-box input{width:100%;height:28px;border:0;border-left:1px solid #111;background:#ffc000;text-align:center;font-weight:800;color:#c00000}
 .breakdown-box output{display:block;padding:4px 6px;border-left:1px solid #111;text-align:center;font-weight:800}
+
+.design-notes{border-color:#b45309;background:#fff7ed;break-inside:avoid}
+.design-notes h2{text-align:left;color:#111;margin-top:0;font-size:16px;letter-spacing:.02em}
+.note-card{display:grid;gap:3px;border:2px solid #111;background:#fff;padding:8px 10px;margin:7px 0;font-size:13px;line-height:1.25}
+.note-card b{font-size:13px;text-transform:uppercase}
+.note-card small{font-size:11px;color:#374151;font-weight:700}
+.note-card.info{border-color:#2563eb;background:#eff6ff}
+.note-card.check{border-color:#b45309;background:#fffbeb}
+.note-card.warning{border-color:#b91c1c;background:#fee2e2}
+.calc-note-row{max-width:470px;margin:-1px auto 4px;border-left:1px solid #111;border-right:1px solid #111;border-bottom:1px solid #111;background:#fff;font-size:11px;font-weight:700;padding:4px 6px;min-height:20px}
+.field-note{display:block;font-size:10px;line-height:1.15;margin:2px 4px 4px;color:#111;background:#fff;padding:3px;border:1px solid transparent;text-align:left;font-weight:700}
+.field-note.info,.calc-note-row.info{border-color:#2563eb;background:#eff6ff;color:#1e3a8a}
+.field-note.check,.calc-note-row.check{border-color:#b45309;background:#fffbeb;color:#92400e}
+.field-note.warning,.calc-note-row.warning{border-color:#b91c1c;background:#fee2e2;color:#7f1d1d}
+@media print{.design-notes{display:block!important;background:#fff}.note-card{page-break-inside:avoid}}
