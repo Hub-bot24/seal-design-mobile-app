@@ -1,4 +1,4 @@
-[tn175-implementation-log.md](https://github.com/user-attachments/files/29530924/tn175-implementation-log.md)
+[tn175-implementation-log.md](https://github.com/user-attachments/files/29531420/tn175-implementation-log.md)
 # TN175 Implementation Log — v32
 
 Source: TN175 Selection and Design of Sprayed Bituminous Treatments, Transport and Main Roads, December 2025.
@@ -36,3 +36,18 @@ TN175 is treated as an amendment layer to AGPT04K / Part 4K. Where TN175 has a r
 - Rebuilt from stable v32 to restore the missing calculateCoat function.
 - Re-applied hard TN175 Table Q6.8/Q6.11/Q6.12 spread-rate override.
 - Fixes v34 start failure/zero outputs.
+
+## v36 TN175 binder factors + embedment notes
+- TN175 binder factor logic is now a hard override from Table Q6.4/Q6.5 when SPEC = TN175, before workbook/4K fallback.
+- Table Q6.4 single/single binder factors added/confirmed:
+  - Conventional C170/C240/C320/C170+crumb rubber = 1.0; M500 = 1.1.
+  - Conventional 60% emulsion = 1.0; HBCE / ≥67% = 1.1.
+  - HSS1 PMB factors, SAM factors, SAMI factor range and WP-A factor added.
+- Table Q6.5 double/double binder factors added/confirmed:
+  - Conventional C170/C240/C320/C170+crumb rubber = 1.0; M500 = 1.1.
+  - Emulsion and HBCE factors added.
+  - HSS2, XSS and SAM factors added.
+- Notes now show when a TN175 binder factor has been applied.
+- TN175 high traffic / high heavy vehicle binder-factor reduction note added as a CHECK only; no automatic reduction is applied.
+- WP-A C170 approval note and WP-A/SAMI limited-experience PMB notes added.
+- TN175 embedment / ball penetration note expanded from Section 6.2.3. If the TN175 limit is exceeded, the app now flags that it is not a simple numeric allowance and recommends dry-back/retest, re-preparation, strengthening/stabilising, or armour-coat consideration.
