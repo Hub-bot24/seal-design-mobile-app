@@ -452,13 +452,20 @@ function renderInlineNotes(notes) {
     if (key === 'aba') matches = byField.get('Binder Abs. by Agg.') || [];
     if (key === 'ap') matches = (byField.get('Binder Abs. by Pav.') || []).concat(byField.get('Cutback binder / AMC') || []);
     if (key === 'ae') matches = byField.get('Embedment') || [];
-    if (key === 'binder') matches = byField.get('Binder factor') || [];
+    if (key === 'binder') matches = (byField.get('Binder factor') || []).concat(byField.get('Cutback binder / AMC') || []);
+    if (key === 'binder2') matches = (byField.get('Second coat – Binder factor') || []).concat(byField.get('Second coat – Cutback binder / AMC') || []);
 
     const important = matches.find(n => n.level === 'WARNING') || matches.find(n => n.level === 'CHECK') || matches[0];
-    const baseClass = el.className.includes('cell-note') ? 'cell-note' : (el.className.includes('calc-note-row') ? 'calc-note-row' : 'field-note');
+    const baseClass = el.className.includes('mini-note-dot') ? 'mini-note-dot' : (el.className.includes('cell-note') ? 'cell-note' : (el.className.includes('calc-note-row') ? 'calc-note-row' : 'field-note'));
     if (!important) {
       el.innerHTML = '';
       el.className = `${baseClass} is-empty`;
+      return;
+    }
+    if (baseClass === 'mini-note-dot') {
+      el.innerHTML = noteIcon(important.level);
+      el.className = `${baseClass} ${safe(important.level.toLowerCase())}`;
+      el.title = `${important.level}: see Design Notes / Warnings`;
       return;
     }
     const label = important.level === 'WARNING' ? 'Warning in notes' : 'Check notes';
@@ -516,6 +523,7 @@ function render(e) {
   setText('apOut', round(r.ap,2));
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
+  setText('aggSpreadBaseOut', round(r.agg.base,0));
   setText('aggSpreadOut', round(r.agg.m2m3,0));
   const s2 = r.second;
   setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
@@ -533,6 +541,7 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
+  setText('aggSpreadBaseOut2', s2 ? round(s2.agg.base,0) : '');
   setText('aggSpreadOut2', s2 ? round(s2.agg.m2m3,0) : '');
   setText('rightTrafficOut', vld);
   setText('rightVfOut', round(r.vf,3).toFixed(3));
@@ -556,7 +565,8 @@ Aggregate: ${r.second.v.aggregateSize}
 ALD: ${round(r.second.ald,2)} mm
 Flakiness Index: ${r.second.v.flIndex}%
 Binder: ${round(r.second.finalBinder,2)} L/m²
-Aggregate spread: ${round(r.second.agg.m2m3,0)} m²/m³
+Design aggregate spread base: ${round(r.second.agg.base,0)} m²/m³
+Aggregate application rate: ${round(r.second.agg.m2m3,0)} m²/m³
 Allowances: Ast N/A + Aba2 ${round(r.second.aba,2)} + Ap N/A + Ae N/A` : '';
   const text = `Spray seal design summary
 Project: ${r.v.projectName}
@@ -572,7 +582,8 @@ v/l/d: ${round(r.traffic.vld,0)}
 Binder: ${round(r.finalBinder,2)} L/m²
 Adjustments: Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}
 Allowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
-Aggregate spread: ${round(r.agg.m2m3,0)} m²/m³${secondText}
+Design aggregate spread base: ${round(r.agg.base,0)} m²/m³
+Aggregate application rate: ${round(r.agg.m2m3,0)} m²/m³${secondText}
 
 Design notes:
 ${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
