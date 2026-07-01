@@ -1,4 +1,4 @@
-[source-app-logic-map.md](https://github.com/user-attachments/files/29530902/source-app-logic-map.md)
+[Uploading source-app-logic-map.md…]()
 # App logic map — Seal Design
 
 This is the practical extraction for converting the workbook into a phone/web app. It uses only `Calculation` and `Lookups ` and ignores all other sheets.
