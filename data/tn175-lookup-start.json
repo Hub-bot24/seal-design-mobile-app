@@ -1,0 +1,455 @@
+{
+  "phase": "TN175 phase 1 - lookup scaffold",
+  "source": "GithubSeal Design - Final.xlsm / Lookups tab",
+  "note": "This is the starting TN175 rule map from the workbook lookup matrix. TN175 page-by-page rules still require validation against TN175 PDF.",
+  "combinations": [
+    {
+      "type": "Double 1st Coat",
+      "treatment": "Conventional Seal",
+      "binders": [
+        {
+          "binder": "C170",
+          "bf": 1.0
+        },
+        {
+          "binder": "C240",
+          "bf": 1.0
+        },
+        {
+          "binder": "C320",
+          "bf": 1.0
+        },
+        {
+          "binder": "M500",
+          "bf": 1.1
+        },
+        {
+          "binder": "AMC5",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC6",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC7",
+          "bf": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-H",
+      "binders": [
+        {
+          "binder": "S15E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.1
+        }
+      ]
+    },
+    {
+      "type": "Double 1st Coat",
+      "treatment": "HSS2-M",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.1
+        }
+      ]
+    },
+    {
+      "type": "Double 1st Coat",
+      "treatment": "SAM-R",
+      "binders": [
+        {
+          "binder": "S15E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Double 1st Coat",
+      "treatment": "SAM-S",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S15E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Double 2nd Coat",
+      "treatment": "Conventional Seal",
+      "binders": [
+        {
+          "binder": "C170",
+          "bf": 1.0
+        },
+        {
+          "binder": "C240",
+          "bf": 1.0
+        },
+        {
+          "binder": "C320",
+          "bf": 1.0
+        },
+        {
+          "binder": "M500",
+          "bf": 1.1
+        },
+        {
+          "binder": "AMC5",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC6",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC7",
+          "bf": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-H",
+      "binders": [
+        {
+          "binder": "S15E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.1
+        }
+      ]
+    },
+    {
+      "type": "Double 2nd Coat",
+      "treatment": "HSS2-M",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.1
+        }
+      ]
+    },
+    {
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-R",
+      "binders": [
+        {
+          "binder": "S15E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Double 2nd Coat",
+      "treatment": "SAM-S",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S15E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.3
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "Aggregate retention(AR)",
+      "binders": [
+        {
+          "binder": "S35E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S10E",
+          "bf": 1.1
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "Bridge Deck Waterproofing",
+      "binders": [
+        {
+          "binder": "S25E",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "Conventional Seal",
+      "binders": [
+        {
+          "binder": "C170",
+          "bf": 1.0
+        },
+        {
+          "binder": "C240",
+          "bf": 1.0
+        },
+        {
+          "binder": "C320",
+          "bf": 1.0
+        },
+        {
+          "binder": "M500",
+          "bf": 1.1
+        },
+        {
+          "binder": "AMC5",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC6",
+          "bf": 1.0
+        },
+        {
+          "binder": "AMC7",
+          "bf": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "HSS1-H",
+      "binders": [
+        {
+          "binder": "S15E",
+          "bf": 1.11
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.11
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.11
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.11
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "HSS1-M",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.0
+        },
+        {
+          "binder": "S15R",
+          "bf": 1.1
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.1
+        },
+        {
+          "binder": "S9R",
+          "bf": 1.0
+        },
+        {
+          "binder": "S9RF",
+          "bf": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "Interlayer Bond Waterproofing",
+      "binders": [
+        {
+          "binder": "S25E",
+          "bf": 1.3
+        },
+        {
+          "binder": "C170",
+          "bf": 1.3
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "SAM-R",
+      "binders": [
+        {
+          "binder": "S15R",
+          "bf": 1.31
+        },
+        {
+          "binder": "S15E",
+          "bf": 1.31
+        },
+        {
+          "binder": "S20E",
+          "bf": 1.31
+        },
+        {
+          "binder": "S15RF",
+          "bf": 1.31
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "SAM-S",
+      "binders": [
+        {
+          "binder": "S10E",
+          "bf": 1.2
+        },
+        {
+          "binder": "S35E",
+          "bf": 1.2
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "SAMI",
+      "binders": [
+        {
+          "binder": "S25E",
+          "bf": 1.3
+        },
+        {
+          "binder": "S18RF",
+          "bf": 1.5
+        }
+      ]
+    },
+    {
+      "type": "Single",
+      "treatment": "Unmodified Emulsion Seal",
+      "binders": [
+        {
+          "binder": "Emulsion(\u226567%)",
+          "bf": 1.1
+        },
+        {
+          "binder": "Emulsion(60%)",
+          "bf": 1.0
+        },
+        {
+          "binder": "Emulsion(\u226567%)-Under Asphalt",
+          "bf": 1.1
+        },
+        {
+          "binder": "Emulsion(60%)-Under Asphalt",
+          "bf": 1.0
+        }
+      ]
+    }
+  ]
+}
