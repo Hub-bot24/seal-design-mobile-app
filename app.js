@@ -1,4 +1,4 @@
-// v35 stable TN175 hotfix - restored calculateCoat + hard TN175 spread rates
+// v36 TN175 binder factors + embedment notes - Q6.4/Q6.5/Q6.2.3
 const state = { lookups: null, binderMatrix: null, deferredPrompt: null };
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -139,12 +139,17 @@ function heavyVehicleGradientCorrection(ehvPct, gradient, braking) {
   return 0;
 }
 function binderFactor(spec, sealType, treatment, binder) {
+  // TN175 is a TMR amendment to Part 4K. When TN175 is selected, the TN175
+  // Q6.4/Q6.5 binder factor tables override workbook/4K mappings.
+  if (isTn175(spec)) {
+    const tn = tn175BinderFactorFallback(sealType, treatment, binder);
+    if (tn !== null && tn !== undefined) return tn;
+  }
   const rows = binderRowsForSpec(spec);
   const lookupType = uiSealTypeToLookupType(sealType);
   const matches = rows.filter(r => norm(r.BF_Type) === norm(lookupType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
   const result = matches.reduce((sum, r) => sum + asNum(r.BF_Result, 0), 0);
   if (result) return result;
-  if (isTn175(spec)) return tn175BinderFactorFallback(sealType, treatment, binder);
   return null;
 }
 function aggregateShapeAdjustment(flIndex) {
@@ -296,21 +301,33 @@ function tn175BinderFactorFallback(sealType, treatment, binder) {
   const type = norm(uiSealTypeToLookupType(sealType));
   const tr = norm(treatment);
   const b = norm(binder);
+  const isDouble = type.includes('DOUBLE');
+  const isSecond = type.includes('2ND');
+
+  // TN175 Table Q6.4 (single/single) and Q6.5 (double/double) binder factors.
+  // These override Part 4K when SPEC = TN175.
   if (b === 'M500') return 1.1;
   if (['C170','C240','C320'].includes(b) || b.includes('CRUMB')) return 1.0;
-  if (b.includes('67') || b.includes('HBCE')) return 1.1;
-  if (b.includes('EMULSION')) return 1.0;
-  if (tr.includes('WPA') || tr.includes('WP-A') || tr.includes('SAMI')) {
-    if (['S20E','S25E','S15R','S15RF','S18RF'].includes(b)) return 1.3;
-    if (b === 'C170') return 1.3;
+  if (b.includes('67') || b.includes('HBCE') || b.includes('HIGH BINDER CONTENT')) return 1.1;
+  if (b.includes('EMULSION') || b.includes('60')) return 1.0;
+
+  if (tr.includes('WPA') || tr.includes('WP-A') || tr.includes('WATERPROOF')) {
+    if (['S20E','S25E','S15R','S15RF','S18RF'].includes(b) || b === 'C170') return 1.3;
   }
-  if (tr.includes('SAM')) {
+  if (tr.includes('SAMI') || tr.includes('INTERLAYER')) {
+    if (['S25E','S18RF'].includes(b)) return 1.3; // lower end of TN175 1.3–1.52 range, designer note added.
+  }
+  if (tr.includes('SAM') && !tr.includes('SAMI')) {
+    if (isDouble) return 1.1;
     if (['S10E','S35E','S9R','S9RF'].includes(b)) return 1.2;
-    if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.3;
+    if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.31;
+  }
+  if (tr.includes('XSS') || tr.includes('EXTREME')) {
+    if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.1;
   }
   if (tr.includes('HSS') || tr.includes('HIGH STRESS')) {
-    if (['S10E','S35E','S9R','S9RF'].includes(b)) return type.includes('DOUBLE') ? 1.0 : 1.0;
-    if (['S15E','S15R','S15RF','S20E'].includes(b)) return type.includes('DOUBLE') ? 1.1 : 1.1;
+    if (['S10E','S35E','S9R','S9RF'].includes(b)) return 1.0;
+    if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.1;
   }
   return null;
 }
@@ -339,6 +356,24 @@ function buildDesignNotes(r) {
 
   if (spec === 'TN175' && !isSecondCoat) {
     notes.push(note('APPLIED', 'TN175 / TMR mode', 'TN175 mode selected. TN175 is treated as a TMR amendment layer to Part 4K: TN175 rules override 4K where coded; 4K still applies where TN175 is silent.', 'TN175 Section 1'));
+  }
+  if (spec === 'TN175' && r.bf) {
+    notes.push(note('APPLIED', coatPrefix + 'TN175 binder factor', `Binder factor BF = ${r.bf} applied for ${r.v.treatment} with ${r.v.binder}. TN175 Table Q6.4 applies for single/single seals and Table Q6.5 applies for double/double seals.`, isSecondCoat ? 'TN175 Table Q6.5' : 'TN175 Table Q6.4 / Table Q6.5'));
+    const tr = norm(r.v.treatment);
+    const b = norm(r.v.binder);
+    if ((tr.includes('SAMI') || tr.includes('INTERLAYER')) && (b === 'S25E' || b === 'S18RF')) {
+      notes.push(note('CHECK', coatPrefix + 'SAMI binder factor range', 'TN175 lists SAMI binder factor as 1.3–1.52 for S25E/S18RF. The app uses the lower end (1.3) until the project-specific adopted factor is confirmed.', 'TN175 Table Q6.4'));
+    }
+    if (!isSecondCoat && r.ehvPct >= 25) {
+      notes.push(note('CHECK', 'TN175 binder factor reduction review', 'High heavy-vehicle percentage detected. TN175 notes binder factors may be reduced by 0.1 in high stress / very heavy traffic conditions, but must not be reduced below 1.0. Apply only by designer judgement, not automatically.', isDoubleFirst(r.v.sealType) ? 'TN175 Table Q6.5 Note 1' : 'TN175 Table Q6.4 Note 1'));
+    }
+    if (tr.includes('WPA') || tr.includes('WP-A')) {
+      if (['S15R','S15RF','S18RF'].includes(b)) notes.push(note('CHECK', 'TN175 WP-A PMB experience risk', `${r.v.binder} selected for WP-A. TN175 says TMR has limited experience with S15R/S15RF/S18RF in WP-A and bleeding-through-asphalt risk is not yet determined; use should be limited to small-scale trials until more experience is gained.`, 'TN175 Table Q6.4 Note 3'));
+      if (b === 'C170') notes.push(note('CHECK', 'TN175 WP-A C170 approval', 'C170 selected for WP-A. TN175 allows C170 only where approved by the Administrator and says consider reducing binder application rate to minimise bleeding through asphalt surfacing.', 'TN175 Table Q5.5.4 / Table Q6.4 Note 2'));
+    }
+    if ((tr.includes('SAMI') || tr.includes('INTERLAYER')) && b === 'S18RF') {
+      notes.push(note('CHECK', 'TN175 SAMI S18RF experience risk', 'S18RF selected for SAMI. TN175 says TMR has limited experience with S18RF for SAMI and use should be limited to small-scale trials until more experience is gained.', 'TN175 Table Q6.4 Note 2'));
+    }
   }
 
   if (cutback) {
@@ -536,7 +571,12 @@ function embedmentAllowance(vld, ballpin, spec = '') {
   if (bpRaw === '') return { value: 0, numeric: 0, display: '0', note: '' };
   if (isTn175(spec) && Number.isFinite(bp)) {
     const limit = traffic > 2000 ? 3 : 4;
-    if (bp > limit) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: `Ball penetration ${bp} mm exceeds TN175 limit of ${limit} mm for ${round(traffic,0)} v/l/d. Rectify/retest before sealing.` };
+    if (bp > limit) return {
+      value: 'NOTE',
+      numeric: 0,
+      display: 'NOTE',
+      note: `Ball penetration ${bp} mm exceeds the TN175 prepared-surface limit of ${limit} mm for ${round(traffic,0)} v/l/d. Do not treat this as a simple allowance. TN175 says excessive embedment on underlying pavements is typically avoided where the prepared surface is sufficiently hard. Consider dry-back/retest, re-preparation, strengthening/stabilising, or a small aggregate armour-coat option before sealing.`
+    };
   }
   if (bpRaw === '>3' || (!isTn175(spec) && Number.isFinite(bp) && bp > 3)) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: 'Ball penetration is greater than 3 mm. Spreadsheet returns NOTE; designer review is required rather than a simple numeric embedment allowance.' };
   if (!Number.isFinite(bp)) return { value: 0, numeric: 0, display: '0', note: 'Ball penetration value is not numeric; embedment allowance set to 0 until checked.' };
