@@ -184,11 +184,32 @@ function allowanceNum(v) {
 }
 function isWaterproofingFixedVfTreatment(treatment) {
   const tr = norm(treatment);
-  return tr === 'SAMI' || tr === 'WPA' || tr === 'WP-A' || tr.includes('WATERPROOFING') || tr.includes('WATERPROOFING SEAL UNDER ASPHALT');
+  return tr === 'SAMI'
+    || tr === 'WPA'
+    || tr === 'WP-A'
+    || tr.includes('WATERPROOFING')
+    || tr.includes('INTERLAYER BOND WATERPROOFING')
+    || tr.includes('BRIDGE DECK WATERPROOFING')
+    || tr.includes('WATERPROOFING SEAL UNDER ASPHALT');
 }
 
 function isSamiTreatment(treatment) {
   return isWaterproofingFixedVfTreatment(treatment);
+}
+
+function isTn175WpA(treatment) {
+  const tr = norm(treatment);
+  return tr.includes('WPA') || tr.includes('WP-A') || tr.includes('INTERLAYER BOND WATERPROOFING') || tr.includes('BRIDGE DECK WATERPROOFING') || (tr.includes('WATERPROOFING') && !tr.includes('S/S'));
+}
+
+function isTn175Sami(treatment) {
+  const tr = norm(treatment);
+  return tr === 'SAMI' || tr.includes('SAMI');
+}
+
+function isTn175SsUnderAsphalt(treatment) {
+  const tr = norm(treatment);
+  return tr.includes('S/S') || tr.includes('SINGLE / SINGLE') || tr.includes('UNDER ASPHALT');
 }
 
 function isTn175(spec) { return norm(spec) === 'TN175'; }
@@ -347,9 +368,10 @@ function buildDesignNotes(r) {
   const coatPrefix = isSecondCoat ? 'Second coat – ' : '';
 
   if (r.samiMode) {
-    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / SAMI / WPA DESIGN VOIDS FACTOR', `${r.v.treatment} selected. Design voids factor VF is fixed at 0.17; normal basic voids factor and Va/Vt/Other adjustments are not applied.`, 'AGPT04K-26 Section 5.5.4'));
-    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / INTERLAYER TREATMENT', `${r.v.treatment} is treated as a waterproofing/interlayer style treatment. If it will be left under traffic for longer, review whether it should be designed as a SAM or normal wearing seal instead.`, 'AGPT04K-26 Sections 3.3.6 and 5.5.4'));
-    if (r.finalBinder < 1.8) {
+    const source = spec === 'TN175' ? 'TN175 Section 5.5.4 / Table Q5.5.4; Part 4K Equation 4' : 'AGPT04K-26 Section 5.5.4';
+    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / SAMI / WP-A DESIGN VOIDS FACTOR', `${r.v.treatment} selected. Design voids factor VF is fixed at 0.17; normal basic voids factor and Va/Vt/Other adjustments are not applied.`, source));
+    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / INTERLAYER TREATMENT', `${r.v.treatment} is treated as a waterproofing/interlayer style treatment. If it will be left under traffic for longer, review whether it should be designed as a SAM or normal wearing seal instead.`, source));
+    if (spec !== 'TN175' && r.finalBinder < 1.8) {
       notes.push(note('WARNING', coatPrefix + 'WATERPROOFING / SAMI MINIMUM BINDER RATE', `${r.v.treatment} calculated binder rate is ${round(r.finalBinder,1).toFixed(1)} L/m². 4K recommends a minimum design binder application rate of 1.8 L/m² for effective crack reflection performance where this SAMI-style rule is used.`, 'AGPT04K-26 Section 5.5.4'));
     }
   }
@@ -367,11 +389,11 @@ function buildDesignNotes(r) {
     if (!isSecondCoat && r.ehvPct >= 25) {
       notes.push(note('CHECK', 'TN175 binder factor reduction review', 'High heavy-vehicle percentage detected. TN175 notes binder factors may be reduced by 0.1 in high stress / very heavy traffic conditions, but must not be reduced below 1.0. Apply only by designer judgement, not automatically.', isDoubleFirst(r.v.sealType) ? 'TN175 Table Q6.5 Note 1' : 'TN175 Table Q6.4 Note 1'));
     }
-    if (tr.includes('WPA') || tr.includes('WP-A')) {
+    if (isTn175WpA(r.v.treatment)) {
       if (['S15R','S15RF','S18RF'].includes(b)) notes.push(note('CHECK', 'TN175 WP-A PMB experience risk', `${r.v.binder} selected for WP-A. TN175 says TMR has limited experience with S15R/S15RF/S18RF in WP-A and bleeding-through-asphalt risk is not yet determined; use should be limited to small-scale trials until more experience is gained.`, 'TN175 Table Q6.4 Note 3'));
-      if (b === 'C170') notes.push(note('CHECK', 'TN175 WP-A C170 approval', 'C170 selected for WP-A. TN175 allows C170 only where approved by the Administrator and says consider reducing binder application rate to minimise bleeding through asphalt surfacing.', 'TN175 Table Q5.5.4 / Table Q6.4 Note 2'));
+      if (b === 'C170') notes.push(note('CHECK', 'TN175 WP-A C170 approval', 'C170 selected for WP-A / waterproofing. TN175 allows C170 only where approved by the Administrator and says consider reducing binder application rate to minimise bleeding through asphalt surfacing.', 'TN175 Section 5.5.4 / Table Q5.5.4 / Table Q6.4 Note 2'));
     }
-    if ((tr.includes('SAMI') || tr.includes('INTERLAYER')) && b === 'S18RF') {
+    if (isTn175Sami(r.v.treatment) && b === 'S18RF') {
       notes.push(note('CHECK', 'TN175 SAMI S18RF experience risk', 'S18RF selected for SAMI. TN175 says TMR has limited experience with S18RF for SAMI and use should be limited to small-scale trials until more experience is gained.', 'TN175 Table Q6.4 Note 2'));
     }
   }
@@ -490,24 +512,50 @@ function buildDesignNotes(r) {
         notes.push(note('APPLIED', 'TN175 double seal ALD / interlock', `Second coat ALD ${round(secondAld,2)} mm is approximately half or less than first coat ALD (${round(r.ald,2)} mm). TN175 marks this aggregate relationship as acceptable subject to contract requirements.`, 'TN175 Table Q4.3.2'));
       }
     }
-    if (!isSecondCoat && r.traffic.vld < 100 && isDoubleSeal(r.v.sealType) && r.vt !== 0) {
-      notes.push(note('CHECK', 'TN175 low traffic Vt', `Traffic is ${round(r.traffic.vld,0)} v/l/d. TN175 says Vt = 0.00 can be used for some double/double low/non-trafficked areas such as wide shoulders; confirm whether the current Vt is appropriate.`, 'TN175 Section 6.1.2'));
-    }
-    if (!isSecondCoat && r.traffic.vld < 100 && !isDoubleSeal(r.v.sealType)) {
-      notes.push(note('CHECK', 'TN175 low traffic single seal', `Traffic is ${round(r.traffic.vld,0)} v/l/d. TN175 recommends reviewing final binder rate for single/single seals below 100 v/l/d, especially high HV rest areas, high stress areas and hot climates.`, 'TN175 Section 6.1.2'));
+    if (!isSecondCoat) {
+      const area = r.v.designArea || 'Traffic lane / wheel path';
+      const areaKey = norm(area);
+      const lowTraffic = r.traffic.vld < 100;
+      if (areaKey.includes('TRAFFIC LANE') || areaKey.includes('WHEEL PATH')) {
+        notes.push(note('APPLIED', 'TN175 design area', 'Design area selected as Traffic lane / wheel path. Normal trafficked-lane Vt logic has been applied.', 'TN175 Section 6.1.2 / Part 4K Table 6.2'));
+      } else if (areaKey.includes('WIDE SHOULDER')) {
+        notes.push(note(lowTraffic ? 'CHECK' : 'CHECK', 'TN175 Vt – wide shoulder', `Design area selected as Wide shoulder. ${lowTraffic ? 'Traffic is below 100 v/l/d; TN175 says Vt = 0.00 can be used for areas such as wide shoulders.' : 'Traffic is not below 100 v/l/d; confirm whether the shoulder should be designed from its own traffic or through-lane traffic.'} Review the selected Vt rather than blindly using the traffic-lane value.`, 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('NARROW SHOULDER')) {
+        notes.push(note('CHECK', 'TN175 Vt – narrow shoulder', 'Design area selected as Narrow shoulder. TN175 says where through-lane traffic counts are used for narrow shoulders, Vt = +0.02 can be used. Confirm whether through-lane traffic is being used for this design area.', 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('CENTRELINE')) {
+        notes.push(note('CHECK', 'TN175 Vt – centreline / between lanes', 'Design area selected as Centreline / between lanes. TN175 says where through-lane traffic counts are used for centrelines, Vt = +0.02 can be used. Confirm the area is a centreline/between-lanes strip and not a median or traffic lane.', 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('MEDIAN')) {
+        notes.push(note('CHECK', 'TN175 Vt – median', 'Design area selected as Median / painted or physical median. Confirm whether the median is genuinely non-trafficked or whether through-lane traffic counts are being used; TN175 mentions medians in the Vt guidance.', 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('HEAVY VEHICLE REST')) {
+        notes.push(note('CHECK', 'TN175 Vt – heavy vehicle rest area', `Design area selected as Heavy vehicle rest area. TN175 recommends reviewing final binder rates for single/single seals where traffic is <100 v/l/d, especially heavy vehicle rest areas with high heavy vehicle percentages, high stress, vehicle wander and hot climates. Current traffic: ${round(r.traffic.vld,0)} v/l/d.`, 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('REST AREA') || areaKey.includes('PARKING')) {
+        notes.push(note('CHECK', 'TN175 Vt – rest area / parking area', 'Design area selected as Rest area / parking area. Do not treat this as simply non-trafficked: vehicles may park, turn, brake and accelerate. Review Vt, stress condition, heavy vehicle percentage and final binder rate.', 'TN175 Section 6.1.2'));
+      } else if (areaKey.includes('GORE') || areaKey.includes('PAINTED ISLAND') || areaKey.includes('NON-TRAFFICKED')) {
+        notes.push(note('CHECK', 'TN175 Vt – gore / non-trafficked sealed area', `Design area selected as Gore / painted island / non-trafficked sealed area. Confirm whether it is truly non-trafficked or designed using adjacent through-lane traffic. ${lowTraffic ? 'Where traffic is below 100 v/l/d, Vt = 0.00 may be appropriate for some low/non-trafficked areas.' : 'If through-lane traffic counts are being used, TN175 may justify Vt = +0.02.'}`, 'TN175 Section 6.1.2'));
+      }
     }
     if (r.samiMode) {
       const tr = norm(r.v.treatment);
       const aggClass = aggregateSizeClass(r.v.aggregateSize);
-      if (tr.includes('SAMI') && !(aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 SAMI aggregate size', `TN175 typically uses 14 mm aggregate for SAMI, with 16 mm sometimes used where 14 mm is unavailable. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
-      if ((tr.includes('WPA') || tr.includes('WP-A')) && !(aggClass === '10' || aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 WP-A aggregate size', `TN175 WP-A typically uses 10 mm or 14 mm aggregate. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      const isSami = isTn175Sami(r.v.treatment);
+      const isWpa = isTn175WpA(r.v.treatment);
+      if (isSami && !(aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 SAMI aggregate size', `TN175 typically uses 14 mm aggregate for SAMI, with 16 mm sometimes used where 14 mm is unavailable. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      if (isSami && norm(r.v.aggregateSize).includes('16')) notes.push(note('CHECK', coatPrefix + 'TN175 SAMI 16 mm aggregate', '16 mm aggregate is sometimes used where 14 mm is not locally available. Increase binder application rate as appropriate where 16 mm is used for SAMI sealing.', 'TN175 Section 5.5.4 footnote 1'));
+      if (isWpa && !(aggClass === '10' || aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 WP-A aggregate size', `TN175 WP-A typically uses 10 mm or 14 mm aggregate. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      if (isWpa) notes.push(note('CHECK', coatPrefix + 'TN175 WP-A treatment selection', 'WP-A with PMB is designed the same as SAMI except 10 mm aggregate is typically used to achieve lower binder rates around 1.5–1.6 L/m². 14 mm must be used under SMA14. Binder selection requires Administrator approval.', 'TN175 Section 5.5.4 / Table Q5.5.4'));
       if (isCutbackBinder(r.v.binder)) notes.push(note('WARNING', coatPrefix + 'TN175 SAMI/WP-A cutter', 'No cutter should be used in SAMI or WP-A seals. Do not use AMC/cutback binder for SAMI/WP-A unless the design is explicitly reviewed and approved.', 'TN175 Section 5.5.4 Binder additives'));
-      if ((tr.includes('WPA') || tr.includes('WP-A')) && norm(r.v.binder) === 'C170') notes.push(note('CHECK', coatPrefix + 'TN175 WP-A C170 approval', 'C170 may be used in WP-A only where approved by the Administrator, generally for minimal areas or small isolated exposed granular sections; consider tack coat to exposed granular surface.', 'TN175 Section 5.5.4 / Table Q5.5.4 Note 2'));
-      if (tr.includes('SAMI') && r.finalBinder < 1.8) notes.push(note('WARNING', coatPrefix + 'TN175 SAMI spray rate', `SAMI binder rate ${round(r.finalBinder,1)} L/m² is below the TN175 typical minimum of 1.8 L/m². Typical SAMI is 2.0–2.5 L/m², with 1.5–1.8 L/m² only for high shear risk locations.`, 'TN175 Table Q5.5.4'));
-      if ((tr.includes('WPA') || tr.includes('WP-A'))) {
+      if (isWpa && norm(r.v.binder) === 'C170') notes.push(note('CHECK', coatPrefix + 'TN175 WP-A C170 approval', 'C170 may be used in WP-A only where approved by the Administrator, generally for minimal areas or small isolated exposed granular sections; consider tack coat to exposed granular surface and consider reducing binder rate to minimise bleeding through asphalt.', 'TN175 Section 5.5.4 / Table Q5.5.4 Note 2'));
+      if (isSami) notes.push(note('CHECK', coatPrefix + 'TN175 SAMI high shear review', 'TN175 says SAMI is typically around 2.0–2.5 L/m² and can be reduced to 1.5–1.8 L/m² in high shear locations such as approaches to signalised intersections or roundabouts. Milling prior to placement can be considered instead of reducing binder where mechanical interlock is needed.', 'TN175 Section 5.5.4 / Table Q5.5.4 Note 3'));
+      if (isSami && r.finalBinder < 1.8) notes.push(note('WARNING', coatPrefix + 'TN175 SAMI spray rate', `SAMI binder rate ${round(r.finalBinder,1)} L/m² is below the TN175 typical minimum of 1.8 L/m². Typical SAMI is 2.0–2.5 L/m², with 1.5–1.8 L/m² only for high shear risk locations.`, 'TN175 Table Q5.5.4'));
+      if (isWpa) {
         const min = aggClass === '14_PLUS' ? 1.8 : 1.5;
         if (r.finalBinder < min) notes.push(note('WARNING', coatPrefix + 'TN175 WP-A spray rate', `WP-A binder rate ${round(r.finalBinder,1)} L/m² is below TN175 typical minimum of ${min} L/m² for ${r.v.aggregateSize}.`, 'TN175 Table Q5.5.4'));
       }
+      notes.push(note('APPLIED', coatPrefix + 'TN175 interlayer aggregate spread', 'SAMI and WP-A aggregate spread rates are typically 20% lighter than standard single/single seal spread rates to ensure asphalt layer adhesion. Overspreading can cause debonding and/or shoving failures.', 'TN175 Section 5.5.4 / Table Q6.10'));
+    }
+    if (isTn175SsUnderAsphalt(r.v.treatment)) {
+      notes.push(note('CHECK', coatPrefix + 'TN175 S/S waterproofing under asphalt', 'For exposed granular pavement under asphalt, TN175 typically requires a prime followed by a single/single seal or initial seal to waterproof the pavement. If immediate trafficking is required, an initial seal can be used in lieu of prime and seal. Adequate prime curing time must be allowed.', 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      if (norm(r.v.binder).startsWith('S')) notes.push(note('CHECK', coatPrefix + 'TN175 PMB adhesion on primed granular surface', 'TN175 notes reduced adhesion may occur between primed granular pavement and polymer modified binder compared with primed granular pavement and C170.', 'TN175 Section 5.5.4'));
     }
     const sprayMin = tn175TypicalSprayMinimum(r.v.treatment, r.v.aggregateSize);
     if (sprayMin && !r.samiMode) {
@@ -635,7 +683,7 @@ function tn175TypicalSprayMinimum(treatment, aggregateSize) {
   const tr = norm(treatment);
   const cls = aggregateSizeClass(aggregateSize);
   if (tr.includes('SAMI')) return { min: 1.8, typical: 'typically 2.0–2.5 L/m²; 1.5–1.8 L/m² only in high shear risk locations', source: 'TN175 Table Q5.5.4' };
-  if (tr.includes('WPA') || tr.includes('WP-A')) return { min: cls === '14_PLUS' ? 1.8 : 1.5, typical: cls === '14_PLUS' ? '≥1.8 L/m² for 14 mm WP-A' : '≥1.5 L/m² for 10 mm WP-A', source: 'TN175 Table Q5.5.4' };
+  if (isTn175WpA(treatment)) return { min: cls === '14_PLUS' ? 1.8 : 1.5, typical: cls === '14_PLUS' ? '≥1.8 L/m² for 14 mm WP-A' : '≥1.5 L/m² for 10 mm WP-A', source: 'TN175 Table Q5.5.4' };
   if (tr.includes('S/S') || tr.includes('WATERPROOFING')) {
     if (cls === '14_PLUS') return { min: 1.5, typical: '≥1.5 L/m² for 14 mm S/S under asphalt', source: 'TN175 Table Q5.5.4' };
     if (cls === '10') return { min: 1.2, typical: '≥1.2 L/m² for 10 mm S/S under asphalt', source: 'TN175 Table Q5.5.4' };
@@ -694,11 +742,11 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
     }
 
     // TN175 Table Q5.5.4 / Q6.10: SAMI and WP-A interlayers.
-    if (tr === 'SAMI' || tr.includes('WPA') || tr.includes('WP-A')) {
+    if (tr === 'SAMI' || isTn175WpA(treatment)) {
       return ranged(
         1000,
         1100,
-        '1000–1100/ALD',
+        '1000–1100',
         'TN175 Table Q5.5.4 / Table Q6.10',
         'TN175 SAMI/WP-A interlayer aggregate spread rate is 1000–1100/ALD. TN175 notes SAMI/WP-A aggregate spread rates are typically 20% lighter than standard single/single seal spread rates to ensure asphalt-layer adhesion.'
       );
@@ -709,7 +757,7 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
       if (agg.includes('7')) {
         return fixed(220, '220', 'TN175 Table Q5.5.4', 'TN175 S/S under asphalt with 7 mm aggregate uses typical spread rate 220 m²/m³.');
       }
-      return ranged(1000, 1100, '1000–1100/ALD', 'TN175 Table Q5.5.4', 'TN175 S/S under asphalt typical spread rate is 1000–1100/ALD for 14 mm and 10 mm aggregate.');
+      return ranged(1000, 1100, '1000–1100', 'TN175 Table Q5.5.4', 'TN175 S/S under asphalt typical spread rate is 1000–1100/ALD for 14 mm and 10 mm aggregate.');
     }
 
     // TN175 Table Q6.12: double/double second application, little/no trafficking between applications.
@@ -718,9 +766,9 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
         return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application with 7 or 5 mm no-ALD uses range 180–250 m²/m³.', 180, 250);
       }
       if (agg.includes('7')) {
-        return ranged(800, 850, '800–850/ALD', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate spread rate range is 800/ALD–850/ALD.');
+        return ranged(800, 850, '800–850', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate spread rate range is 800/ALD–850/ALD.');
       }
-      return ranged(850, 900, '850–900/ALD', 'TN175 Table Q6.12', 'TN175 double/double second application 10 mm aggregate spread rate range is 850/ALD–900/ALD.');
+      return ranged(850, 900, '850–900', 'TN175 Table Q6.12', 'TN175 double/double second application 10 mm aggregate spread rate range is 850/ALD–900/ALD.');
     }
 
     // TN175 Table Q6.11: double/double first application.
@@ -732,7 +780,7 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
         base,
         baseMin: base,
         baseMax: base,
-        displayBase: `${base}/ALD`,
+        displayBase: `${base}`,
         m2m3: val,
         m2m3Min: val,
         m2m3Max: val,
@@ -746,12 +794,12 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
     // TN175 Table Q6.8: single/single seals. This is the bug that previously fell back to 900/ALD.
     if (isSingle) {
       if (cls === '14_PLUS') {
-        return ranged(900, 950, '900–950/ALD', 'TN175 Table Q6.8', 'TN175 single/single 14, 16 or 20 mm aggregate spread rate range is 900/ALD–950/ALD.');
+        return ranged(900, 950, '900–950', 'TN175 Table Q6.8', 'TN175 single/single 14, 16 or 20 mm aggregate spread rate range is 900/ALD–950/ALD.');
       }
       if (cls === '10') {
-        return ranged(800, 850, '800–850/ALD', 'TN175 Table Q6.8', 'TN175 single/single 10 mm aggregate spread rate range is 800/ALD–850/ALD.');
+        return ranged(800, 850, '800–850', 'TN175 Table Q6.8', 'TN175 single/single 10 mm aggregate spread rate range is 800/ALD–850/ALD.');
       }
-      return ranged(750, 800, '750–800/ALD or 180–230 no-ALD', 'TN175 Table Q6.8', 'TN175 single/single 7 or 5 mm aggregate spread rate range is 750/ALD–800/ALD, or 180–230 m²/m³ where no ALD is used.');
+      return ranged(750, 800, '750–800 or 180–230 no-ALD', 'TN175 Table Q6.8', 'TN175 single/single 7 or 5 mm aggregate spread rate range is 750/ALD–800/ALD, or 180–230 m²/m³ where no ALD is used.');
     }
   }
 
