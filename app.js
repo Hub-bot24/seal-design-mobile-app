@@ -361,16 +361,33 @@ function defaultAldForAggregate(agg, fallback = 3.8) {
   if (a.includes('5')) return 2.8;
   return fallback;
 }
-function aggregateSpreadRate(spec, sealType, treatment, binder, ald) {
-  const st = norm(uiSealTypeToLookupType(sealType)), tr = norm(treatment), b = norm(binder);
-  let base = 950;
-  if (tr === 'SAMI' || tr.includes('WATERPROOFING')) base = 1000;
-  else if (tr.includes('UNMODIFIED EMULSION') || tr.includes('HI-FLOAT') || tr.includes('PRIMER')) base = 800;
-  else if (tr.includes('CONVENTIONAL') && ['AMC5'].includes(b)) base = 800;
-  else if (st.includes('DOUBLE 1ST')) base = b.startsWith('AMC') ? 850 : 950;
-  else if (st.includes('DOUBLE 2ND')) base = 900;
+function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSize) {
+  const st = norm(uiSealTypeToLookupType(sealType));
+  const tr = norm(treatment);
+  const b = norm(binder);
+  const agg = norm(aggregateSize);
+
+  // AGPT04K-26 aggregate spread rules from Tables 6.8, 6.11 and 6.12.
+  // Do not use the double/double first-coat 950/ALD rate for a single/single seal.
+  let base = 900;
+
+  if (tr === 'SAMI' || tr.includes('WATERPROOFING')) {
+    base = 1000;
+  } else if (st.includes('DOUBLE 2ND')) {
+    // Table 6.12: second application uses 900/ALD for 10 mm and 7 mm,
+    // and a fixed 225 m²/m³ for 5 mm with no ALD.
+    if (agg.includes('5')) return { base: 225, m2m3: 225, fixed: true };
+    base = 900;
+  } else if (st.includes('DOUBLE 1ST')) {
+    // Table 6.11: first application double/double.
+    base = (b.includes('EMULSION') || b === 'AMC4' || b === 'AMC5') ? 850 : 950;
+  } else {
+    // Table 6.8: single/single seal.
+    base = (b.includes('EMULSION') || b === 'AMC4' || b === 'AMC5' || tr.includes('UNMODIFIED EMULSION') || tr.includes('HI-FLOAT') || tr.includes('PRIMER')) ? 800 : 900;
+  }
+
   const m2m3 = base / Math.max(asNum(ald, 1), 0.1);
-  return { base, m2m3 };
+  return { base, m2m3, fixed: false };
 }
 function calculateCoat(v) {
   const shvPct = Math.max(0, asNum(v.shvPct));
@@ -393,7 +410,7 @@ function calculateCoat(v) {
   const ap = allowanceNum(v.ap);
   const ae = embedmentAllowance(traffic.vld, v.ballpin);
   const finalBinder = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
-  const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald);
+  const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
   return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
 }
 function calculate() {
