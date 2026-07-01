@@ -142,7 +142,9 @@ function binderFactor(spec, sealType, treatment, binder) {
   const lookupType = uiSealTypeToLookupType(sealType);
   const matches = rows.filter(r => norm(r.BF_Type) === norm(lookupType) && norm(r.BF_Treatment) === norm(treatment) && norm(r.BF_Binder) === norm(binder));
   const result = matches.reduce((sum, r) => sum + asNum(r.BF_Result, 0), 0);
-  return result || null;
+  if (result) return result;
+  if (isTn175(spec)) return tn175BinderFactorFallback(sealType, treatment, binder);
+  return null;
 }
 function aggregateShapeAdjustment(flIndex) {
   const fi = asNum(flIndex, NaN);
@@ -176,11 +178,140 @@ function allowanceNum(v) {
 }
 function isWaterproofingFixedVfTreatment(treatment) {
   const tr = norm(treatment);
-  return tr === 'SAMI' || tr === 'WPA' || tr.includes('WATERPROOFING');
+  return tr === 'SAMI' || tr === 'WPA' || tr === 'WP-A' || tr.includes('WATERPROOFING') || tr.includes('WATERPROOFING SEAL UNDER ASPHALT');
 }
 
 function isSamiTreatment(treatment) {
   return isWaterproofingFixedVfTreatment(treatment);
+}
+
+function isTn175(spec) { return norm(spec) === 'TN175'; }
+function aggregateSizeClass(aggregateSize) {
+  const n = parseFloat(String(aggregateSize || '').replace(/[^0-9.]/g, ''));
+  if (!Number.isFinite(n)) return 'ALL';
+  if (n <= 7) return '5_OR_7';
+  if (n <= 10) return '10';
+  return '14_PLUS';
+}
+function existingSurfaceClass(surfaceType) {
+  const s = norm(surfaceType);
+  if (s.includes('ASPHALT') || s.includes('MICRO')) return 'ASPHALT_MICRO';
+  if (s.includes('5') || s.includes('7')) return '5_OR_7_SEAL';
+  if (s.includes('10')) return '10_SEAL';
+  if (s.includes('14') || s.includes('16') || s.includes('20')) return '14_PLUS_SEAL';
+  return null;
+}
+function tnRange(sp, rules) {
+  for (const r of rules) {
+    const minOk = r.minInclusive ? sp >= r.min : sp > r.min;
+    const maxOk = r.maxInclusive ? sp <= r.max : sp < r.max;
+    if (minOk && maxOk) return r.val;
+  }
+  return null;
+}
+function tn175SurfaceTextureAllowance(surfaceType, aggregateSize, sandPatch) {
+  const sp = asNum(sandPatch, NaN);
+  if (!Number.isFinite(sp)) return { value: null, numeric: 0, display: '0', note: 'No sand patch/texture value entered.', source: 'TN175 Table Q6.3' };
+  const surf = existingSurfaceClass(surfaceType);
+  const agg = aggregateSizeClass(aggregateSize);
+  const rule = (val) => ({ value: val, numeric: Number.isFinite(Number(val)) ? Number(val) : 0, display: String(val).toUpperCase(), note: '', source: 'TN175 Table Q6.3' });
+  const R = (arr) => rule(tnRange(sp, arr));
+  const base = [
+    {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:'NOTE 1'},
+    {min:0.3,max:0.9,minInclusive:false,maxInclusive:true,val:0.1},
+    {min:0.9,max:1.4,minInclusive:false,maxInclusive:true,val:0.2},
+    {min:1.4,max:2.0,minInclusive:false,maxInclusive:true,val:0.3},
+    {min:2.0,max:2.7,minInclusive:false,maxInclusive:true,val:0.4},
+    {min:2.7,max:1e9,minInclusive:false,maxInclusive:true,val:0.5},
+  ];
+  if (surf === 'ASPHALT_MICRO') return R([
+    {min:0,max:0.1,minInclusive:true,maxInclusive:true,val:0},
+    {min:0.1,max:0.4,minInclusive:false,maxInclusive:true,val:0.1},
+    {min:0.4,max:0.8,minInclusive:false,maxInclusive:true,val:0.2},
+    {min:0.8,max:1.4,minInclusive:false,maxInclusive:true,val:0.3},
+    {min:1.4,max:1e9,minInclusive:false,maxInclusive:true,val:0.4},
+  ]);
+  if (surf === '14_PLUS_SEAL') {
+    if (agg === '5_OR_7') return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:'NOTE 1'},
+      {min:0.3,max:0.6,minInclusive:false,maxInclusive:true,val:'NOTE 2'},
+      {min:0.6,max:0.9,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.9,max:1.3,minInclusive:false,maxInclusive:true,val:0.2},
+      {min:1.3,max:1.9,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:1.9,max:2.9,minInclusive:false,maxInclusive:true,val:0.4},
+      {min:2.9,max:1e9,minInclusive:false,maxInclusive:true,val:0.5},
+    ]);
+    if (agg === '10') return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:-0.1}, {min:0.3,max:0.5,minInclusive:false,maxInclusive:true,val:0},
+      {min:0.5,max:0.7,minInclusive:false,maxInclusive:true,val:0.1}, {min:0.7,max:0.9,minInclusive:false,maxInclusive:true,val:0.2},
+      {min:0.9,max:1.3,minInclusive:false,maxInclusive:true,val:0.3}, {min:1.3,max:1.8,minInclusive:false,maxInclusive:true,val:0.4},
+      {min:1.8,max:2.2,minInclusive:false,maxInclusive:true,val:0.5}, {min:2.2,max:1e9,minInclusive:false,maxInclusive:true,val:'NOTE 3'},
+    ]);
+    return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:-0.1}, {min:0.3,max:0.5,minInclusive:false,maxInclusive:true,val:0},
+      {min:0.5,max:0.6,minInclusive:false,maxInclusive:true,val:0.1}, {min:0.6,max:0.7,minInclusive:false,maxInclusive:true,val:0.2},
+      {min:0.7,max:0.9,minInclusive:false,maxInclusive:true,val:0.3}, {min:0.9,max:1.3,minInclusive:false,maxInclusive:true,val:0.4},
+      {min:1.3,max:2.2,minInclusive:false,maxInclusive:true,val:0.5}, {min:2.2,max:1e9,minInclusive:false,maxInclusive:true,val:'NOTE 3'},
+    ]);
+  }
+  if (surf === '10_SEAL') {
+    if (agg === '5_OR_7') return R(base);
+    if (agg === '10') return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:'NOTE 1'}, {min:0.3,max:0.7,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.7,max:1.1,minInclusive:false,maxInclusive:true,val:0.2}, {min:1.1,max:1.7,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:1.7,max:2.2,minInclusive:false,maxInclusive:true,val:0.4}, {min:2.2,max:1e9,minInclusive:false,maxInclusive:true,val:'NOTE 3'},
+    ]);
+    return R([
+      {min:0,max:0.2,minInclusive:true,maxInclusive:true,val:'NOTE 1'}, {min:0.2,max:0.6,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.6,max:0.9,minInclusive:false,maxInclusive:true,val:0.2}, {min:0.9,max:1.2,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:1.2,max:1.7,minInclusive:false,maxInclusive:true,val:0.4}, {min:1.7,max:2.2,minInclusive:false,maxInclusive:true,val:0.5},
+      {min:2.2,max:1e9,minInclusive:false,maxInclusive:true,val:'NOTE 3'},
+    ]);
+  }
+  if (surf === '5_OR_7_SEAL') {
+    if (agg === '5_OR_7') return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:'NOTE 1'}, {min:0.3,max:0.9,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.9,max:1.5,minInclusive:false,maxInclusive:true,val:0.2}, {min:1.5,max:2.2,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:2.2,max:3.2,minInclusive:false,maxInclusive:true,val:0.4}, {min:3.2,max:1e9,minInclusive:false,maxInclusive:true,val:0.5},
+    ]);
+    if (agg === '10') return R([
+      {min:0,max:0.3,minInclusive:true,maxInclusive:true,val:'NOTE 1'}, {min:0.3,max:0.7,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.7,max:1.1,minInclusive:false,maxInclusive:true,val:0.2}, {min:1.1,max:1.8,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:1.8,max:2.2,minInclusive:false,maxInclusive:true,val:0.4}, {min:2.2,max:1e9,minInclusive:false,maxInclusive:true,val:'NOTE 3'},
+    ]);
+    return R([
+      {min:0,max:0.2,minInclusive:true,maxInclusive:true,val:'NOTE 1'}, {min:0.2,max:0.6,minInclusive:false,maxInclusive:true,val:0.1},
+      {min:0.6,max:0.9,minInclusive:false,maxInclusive:true,val:0.2}, {min:0.9,max:1.4,minInclusive:false,maxInclusive:true,val:0.3},
+      {min:1.4,max:2.0,minInclusive:false,maxInclusive:true,val:0.4}, {min:2.0,max:1e9,minInclusive:false,maxInclusive:true,val:0.5},
+    ]);
+  }
+  return { value: null, numeric: 0, display: 'NO MATCH', note: `No TN175 Q6.3 match for existing surface ${surfaceType}, proposed aggregate ${aggregateSize}, texture ${sandPatch}.`, source: 'TN175 Table Q6.3' };
+}
+function isEmulsionOrCutbackBinder(binder) {
+  const b = norm(binder);
+  return b.includes('EMULSION') || b.includes('AMC') || b.includes('CUTBACK') || b.includes('CUT BACK') || b.includes('HBCE');
+}
+function tn175BinderFactorFallback(sealType, treatment, binder) {
+  const type = norm(uiSealTypeToLookupType(sealType));
+  const tr = norm(treatment);
+  const b = norm(binder);
+  if (b === 'M500') return 1.1;
+  if (['C170','C240','C320'].includes(b) || b.includes('CRUMB')) return 1.0;
+  if (b.includes('67') || b.includes('HBCE')) return 1.1;
+  if (b.includes('EMULSION')) return 1.0;
+  if (tr.includes('WPA') || tr.includes('WP-A') || tr.includes('SAMI')) {
+    if (['S20E','S25E','S15R','S15RF','S18RF'].includes(b)) return 1.3;
+    if (b === 'C170') return 1.3;
+  }
+  if (tr.includes('SAM')) {
+    if (['S10E','S35E','S9R','S9RF'].includes(b)) return 1.2;
+    if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.3;
+  }
+  if (tr.includes('HSS') || tr.includes('HIGH STRESS')) {
+    if (['S10E','S35E','S9R','S9RF'].includes(b)) return type.includes('DOUBLE') ? 1.0 : 1.0;
+    if (['S15E','S15R','S15RF','S20E'].includes(b)) return type.includes('DOUBLE') ? 1.1 : 1.1;
+  }
+  return null;
 }
 function buildDesignNotes(r) {
   const notes = [];
@@ -206,12 +337,12 @@ function buildDesignNotes(r) {
   }
 
   if (spec === 'TN175' && !isSecondCoat) {
-    notes.push(note('APPLIED', 'TN175 / TMR mode', 'TN175 mode selected. Treatment, binder options and binder factor are currently driven from the workbook TN175 lookup matrix. Where TN175 has not yet been implemented page-by-page, the app still falls back to the current Part 4K calculation engine and flags that TN175 validation is required.', 'TN175 December 2025 + workbook Lookups tab'));
+    notes.push(note('APPLIED', 'TN175 / TMR mode', 'TN175 mode selected. TN175 is treated as a TMR amendment layer to Part 4K: TN175 rules override 4K where coded; 4K still applies where TN175 is silent.', 'TN175 Section 1'));
   }
 
   if (cutback) {
     const zeroAllowance = aba === 0 && ap === 0 ? ' Aba and Ap are currently 0, so confirm no absorption allowance is required.' : '';
-    notes.push(note('CHECK', coatPrefix + 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
+    notes.push(note('CHECK', coatPrefix + 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4; TN175 Sections 4.8 and 4.8.1 where applicable'));
   }
 
   if (!Number.isFinite(ald) || ald <= 0) {
@@ -294,6 +425,67 @@ function buildDesignNotes(r) {
     notes.push(note('CHECK', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. Review heavy vehicle effects and stress conditions.`, 'AGPT04K-26 Section 5.2.5'));
   }
 
+
+  if (spec === 'TN175') {
+    if (!isSecondCoat && (r.ehvPct >= 25 || r.traffic.aadt >= 1000)) {
+      notes.push(note('CHECK', 'TN175 variable-rate spray review', `High EHV/AADT conditions can make one uniform spray rate too low in non-wheelpaths but too high in wheelpaths. If texture allowance differs by ≥0.3 L/m² across the lane, TN175 says variable-rate spraying should be considered. Variable-rate seals are not typically used where daily minimum air temperature is expected below 10°C within one month after completion.`, 'TN175 Section 3.4.1'));
+    }
+    if (!isSecondCoat && r.ar?.source?.includes('TN175')) {
+      notes.push(note('APPLIED', 'TN175 surface texture allowance', `TN175 Table Q6.3 surface texture allowance used for existing surface '${r.v.surfaceType}', proposed aggregate '${r.v.aggregateSize}', texture ${r.v.surfaceTexture}. Result: ${r.ar.display}.`, 'TN175 Table Q6.3'));
+    }
+    if ((r.agg?.source || '').includes('TN175')) {
+      const range = r.agg.displayM2M3 ? ` Calculated application rate display: ${r.agg.displayM2M3} m²/m³.` : '';
+      notes.push(note('APPLIED', coatPrefix + 'TN175 aggregate spread rate', (r.agg.note || `TN175 aggregate spread rate rule applied. Base ${r.agg.displayBase || r.agg.base} m²/m³.`) + range, r.agg.source));
+    }
+    const bp = asNum(r.v.ballpin, NaN);
+    const limit = r.traffic.vld > 2000 ? 3 : 4;
+    if (!isSecondCoat && Number.isFinite(bp)) {
+      if (bp > limit) notes.push(note('WARNING', 'TN175 embedment / ball penetration', `Ball penetration ${bp} mm exceeds TN175 prepared surface limit of ${limit} mm for ${round(r.traffic.vld,0)} v/l/d. Defer sealing, re-prepare/strengthen, or consider armour coat options before sealing.`, 'TN175 Section 6.2.3'));
+      else notes.push(note('APPLIED', 'TN175 embedment / ball penetration', `Ball penetration ${bp} mm is within the TN175 prepared surface limit of ${limit} mm for ${round(r.traffic.vld,0)} v/l/d.`, 'TN175 Section 6.2.3'));
+    }
+    if (!isSecondCoat && r.second) {
+      const halfAld = asNum(r.ald,0) / 2;
+      const secondAld = asNum(r.second.ald,0);
+      const secondFi = asNum(r.second.v.flIndex, NaN);
+      if (secondAld > halfAld) {
+        const fiOk = Number.isFinite(secondFi) && secondFi >= 16 && secondFi <= 25;
+        notes.push(note(fiOk ? 'CHECK' : 'WARNING', 'TN175 double seal ALD / interlock', `Second coat ALD ${round(secondAld,2)} mm is greater than half the first coat ALD (${round(halfAld,2)} mm). TN175 requires second layer FI to target 16–25%, a more open/lighter first coat spread rate (about 10–20% lighter than typical), and possible total binder reduction up to 0.2 L/m². Current second FI: ${Number.isFinite(secondFi) ? secondFi : 'missing'}%.`, 'TN175 Table Q4.3.2'));
+      } else {
+        notes.push(note('APPLIED', 'TN175 double seal ALD / interlock', `Second coat ALD ${round(secondAld,2)} mm is approximately half or less than first coat ALD (${round(r.ald,2)} mm). TN175 marks this aggregate relationship as acceptable subject to contract requirements.`, 'TN175 Table Q4.3.2'));
+      }
+    }
+    if (!isSecondCoat && r.traffic.vld < 100 && isDoubleSeal(r.v.sealType) && r.vt !== 0) {
+      notes.push(note('CHECK', 'TN175 low traffic Vt', `Traffic is ${round(r.traffic.vld,0)} v/l/d. TN175 says Vt = 0.00 can be used for some double/double low/non-trafficked areas such as wide shoulders; confirm whether the current Vt is appropriate.`, 'TN175 Section 6.1.2'));
+    }
+    if (!isSecondCoat && r.traffic.vld < 100 && !isDoubleSeal(r.v.sealType)) {
+      notes.push(note('CHECK', 'TN175 low traffic single seal', `Traffic is ${round(r.traffic.vld,0)} v/l/d. TN175 recommends reviewing final binder rate for single/single seals below 100 v/l/d, especially high HV rest areas, high stress areas and hot climates.`, 'TN175 Section 6.1.2'));
+    }
+    if (r.samiMode) {
+      const tr = norm(r.v.treatment);
+      const aggClass = aggregateSizeClass(r.v.aggregateSize);
+      if (tr.includes('SAMI') && !(aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 SAMI aggregate size', `TN175 typically uses 14 mm aggregate for SAMI, with 16 mm sometimes used where 14 mm is unavailable. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      if ((tr.includes('WPA') || tr.includes('WP-A')) && !(aggClass === '10' || aggClass === '14_PLUS')) notes.push(note('CHECK', coatPrefix + 'TN175 WP-A aggregate size', `TN175 WP-A typically uses 10 mm or 14 mm aggregate. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      if (isCutbackBinder(r.v.binder)) notes.push(note('WARNING', coatPrefix + 'TN175 SAMI/WP-A cutter', 'No cutter should be used in SAMI or WP-A seals. Do not use AMC/cutback binder for SAMI/WP-A unless the design is explicitly reviewed and approved.', 'TN175 Section 5.5.4 Binder additives'));
+      if ((tr.includes('WPA') || tr.includes('WP-A')) && norm(r.v.binder) === 'C170') notes.push(note('CHECK', coatPrefix + 'TN175 WP-A C170 approval', 'C170 may be used in WP-A only where approved by the Administrator, generally for minimal areas or small isolated exposed granular sections; consider tack coat to exposed granular surface.', 'TN175 Section 5.5.4 / Table Q5.5.4 Note 2'));
+      if (tr.includes('SAMI') && r.finalBinder < 1.8) notes.push(note('WARNING', coatPrefix + 'TN175 SAMI spray rate', `SAMI binder rate ${round(r.finalBinder,1)} L/m² is below the TN175 typical minimum of 1.8 L/m². Typical SAMI is 2.0–2.5 L/m², with 1.5–1.8 L/m² only for high shear risk locations.`, 'TN175 Table Q5.5.4'));
+      if ((tr.includes('WPA') || tr.includes('WP-A'))) {
+        const min = aggClass === '14_PLUS' ? 1.8 : 1.5;
+        if (r.finalBinder < min) notes.push(note('WARNING', coatPrefix + 'TN175 WP-A spray rate', `WP-A binder rate ${round(r.finalBinder,1)} L/m² is below TN175 typical minimum of ${min} L/m² for ${r.v.aggregateSize}.`, 'TN175 Table Q5.5.4'));
+      }
+    }
+    const sprayMin = tn175TypicalSprayMinimum(r.v.treatment, r.v.aggregateSize);
+    if (sprayMin && !r.samiMode) {
+      if (r.finalBinder < sprayMin.min) notes.push(note('WARNING', coatPrefix + 'TN175 typical spray rate', `Design binder rate ${round(r.finalBinder,2)} L/m² is below TN175 typical minimum ${sprayMin.min} L/m² (${sprayMin.typical}).`, sprayMin.source));
+      else notes.push(note('APPLIED', coatPrefix + 'TN175 typical spray rate', `Design binder rate ${round(r.finalBinder,2)} L/m² meets TN175 typical check: ${sprayMin.typical}.`, sprayMin.source));
+    }
+    if (r.emulsionContent) {
+      notes.push(note('APPLIED', coatPrefix + 'Emulsion spray rate', `Emulsion binder selected. Residual binder rate ${round(r.finalBinder,2)} L/m² converts to approximate emulsion spray rate ${round(r.emulsionSprayRate,2)} L/m² at ${round(r.emulsionContent*100,0)}% binder content. Confirm product binder content from supplier/MRTS12 before adoption.`, 'TN175 Sections 4.8.1 and Table Q6.4/Q6.5; product data required'));
+    }
+    if (!isSecondCoat && isCutbackBinder(r.v.binder) && norm(r.v.binder).includes('AMC7')) {
+      notes.push(note('CHECK', 'TN175 AMC7 / initial seal risk', 'AMC7 is a low cutter content cutback. TN175 flags poor adhesion risk where surface preparation is dusty/cementitiously stabilised, and notes AMC7 is commonly used in hot conditions or to reduce curing time but flushing/bleeding risk must be assessed.', 'TN175 Sections 4.8 and 4.8.1'));
+    }
+  }
+
   if (!r.bf) {
     notes.push(note('WARNING', coatPrefix + 'Binder factor', 'Binder factor not found for this SPEC + TYPE + TREATMENT + BINDER. Do not use the binder rate until mapped/validated.', 'Extracted Lookups tab / AGPT04K-26 Tables 6.4 and 6.5'));
   }
@@ -304,19 +496,19 @@ function buildDesignNotes(r) {
 }
 
 function surfaceTextureAllowance(spec, surfaceType, aggregateSize, sandPatch, sealType, treatment) {
-  const sourceLabel = norm(spec) === 'TN175' ? 'TN175 Table Q6.3 / workbook Lookups tab' : 'AGPT04K-26 Table 6.3 / workbook Lookups tab';
+  const sourceLabel = isTn175(spec) ? 'TN175 Table Q6.3' : 'AGPT04K-26 Table 6.3 / workbook Lookups tab';
   const st = norm(sealType);
   const tr = norm(treatment);
   const surf = norm(surfaceType);
   const sp = asNum(sandPatch, NaN);
 
-  // Match the spreadsheet guard clauses before using LookupsTbl.
   if (tr === 'HATELIT' || tr === 'HUESKER CHIPSEAL GRID A10' || tr === 'HUESKER CHIPSEAL GRID A15' || st === 'DOUBLE 2ND COAT' || surf === 'N/A') {
     return { value: 'N/A', numeric: 0, display: 'N/A', note: 'Surface texture allowance is not applicable for an immediate double/double second application.', source: sourceLabel };
   }
   if (['GRANULAR','FOAMED BITUMEN','PRIMED','PRIMER SEAL','BRIDGE DECK'].includes(surf)) {
     return { value: 0, numeric: 0, display: '0', note: 'Surface type is treated as 0 surface texture allowance by the calculation-sheet rule.', source: sourceLabel };
   }
+  if (isTn175(spec)) return tn175SurfaceTextureAllowance(surfaceType, aggregateSize, sandPatch);
   if (!Number.isFinite(sp)) {
     return { value: null, numeric: 0, display: '0', note: 'No sand patch/texture value entered.', source: sourceLabel };
   }
@@ -335,13 +527,17 @@ function surfaceTextureAllowance(spec, surfaceType, aggregateSize, sandPatch, se
   return { value: raw, numeric, display: rawNorm.startsWith('NOTE') ? rawNorm : String(raw), note: '', source: sourceLabel };
 }
 
-function embedmentAllowance(vld, ballpin) {
+function embedmentAllowance(vld, ballpin, spec = '') {
   const bpRaw = String(ballpin ?? '').trim();
   const bp = asNum(ballpin, NaN);
   const traffic = asNum(vld, 0);
   if (norm(bpRaw) === 'N/A') return { value: 'N/A', numeric: 0, display: 'N/A', note: '' };
   if (bpRaw === '') return { value: 0, numeric: 0, display: '0', note: '' };
-  if (bpRaw === '>3' || (Number.isFinite(bp) && bp > 3)) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: 'Ball penetration is greater than 3 mm. Spreadsheet returns NOTE; designer review is required rather than a simple numeric embedment allowance.' };
+  if (isTn175(spec) && Number.isFinite(bp)) {
+    const limit = traffic > 2000 ? 3 : 4;
+    if (bp > limit) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: `Ball penetration ${bp} mm exceeds TN175 limit of ${limit} mm for ${round(traffic,0)} v/l/d. Rectify/retest before sealing.` };
+  }
+  if (bpRaw === '>3' || (!isTn175(spec) && Number.isFinite(bp) && bp > 3)) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: 'Ball penetration is greater than 3 mm. Spreadsheet returns NOTE; designer review is required rather than a simple numeric embedment allowance.' };
   if (!Number.isFinite(bp)) return { value: 0, numeric: 0, display: '0', note: 'Ball penetration value is not numeric; embedment allowance set to 0 until checked.' };
 
   let ae = 0;
@@ -378,64 +574,161 @@ function defaultAldForAggregate(agg, fallback = 3.8) {
   if (a.includes('5')) return 2.8;
   return fallback;
 }
+
+function rateRangeText(min, max) {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return '';
+  const a = Math.round(min);
+  const b = Math.round(max);
+  return a === b ? String(a) : `${a}–${b}`;
+}
+function tnRateRange(baseMin, baseMax, aldNum) {
+  const lo = baseMin / aldNum;
+  const hi = baseMax / aldNum;
+  return { min: lo, max: hi, displayM2M3: rateRangeText(lo, hi) };
+}
+function isUnderAsphaltTreatment(treatment) {
+  const tr = norm(treatment);
+  return tr.includes('S/S') || tr.includes('UNDER ASPHALT') || tr.includes('WPA') || tr.includes('WP-A') || tr.includes('SAMI') || tr.includes('WATERPROOFING');
+}
+function tn175TypicalSprayMinimum(treatment, aggregateSize) {
+  const tr = norm(treatment);
+  const cls = aggregateSizeClass(aggregateSize);
+  if (tr.includes('SAMI')) return { min: 1.8, typical: 'typically 2.0–2.5 L/m²; 1.5–1.8 L/m² only in high shear risk locations', source: 'TN175 Table Q5.5.4' };
+  if (tr.includes('WPA') || tr.includes('WP-A')) return { min: cls === '14_PLUS' ? 1.8 : 1.5, typical: cls === '14_PLUS' ? '≥1.8 L/m² for 14 mm WP-A' : '≥1.5 L/m² for 10 mm WP-A', source: 'TN175 Table Q5.5.4' };
+  if (tr.includes('S/S') || tr.includes('WATERPROOFING')) {
+    if (cls === '14_PLUS') return { min: 1.5, typical: '≥1.5 L/m² for 14 mm S/S under asphalt', source: 'TN175 Table Q5.5.4' };
+    if (cls === '10') return { min: 1.2, typical: '≥1.2 L/m² for 10 mm S/S under asphalt', source: 'TN175 Table Q5.5.4' };
+    return { min: 1.0, typical: '≥1.0 L/m² for 7 mm S/S under asphalt', source: 'TN175 Table Q5.5.4' };
+  }
+  return null;
+}
+
 function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSize) {
   const st = norm(uiSealTypeToLookupType(sealType));
   const tr = norm(treatment);
-  const b = norm(binder);
   const agg = norm(aggregateSize);
+  const aldNum = Math.max(asNum(ald, 1), 0.1);
+  let base = 900;
+  let source = isTn175(spec) ? 'TN175 Section 6.7' : 'AGPT04K-26 Section 6.7';
+
+  // HARD TN175 OVERRIDE: when SPEC is TN175, aggregate spread rates must come from TN175
+  // tables Q6.8-Q6.12 first. Do not fall back to the 4K fixed 900/ALD value.
+  if (isTn175(spec)) {
+    const cls = aggregateSizeClass(aggregateSize);
+    const isSecond = st.includes('DOUBLE 2ND');
+    const isFirstDouble = st.includes('DOUBLE 1ST');
+    const isSingle = !isFirstDouble && !isSecond;
+
+    function ranged(baseMin, baseMax, displayBase, source, noteText) {
+      const rr = tnRateRange(baseMin, baseMax, aldNum);
+      return {
+        base: baseMin,
+        baseMin,
+        baseMax,
+        displayBase,
+        m2m3: rr.min,
+        m2m3Min: rr.min,
+        m2m3Max: rr.max,
+        displayM2M3: rr.displayM2M3,
+        fixed: false,
+        source,
+        note: noteText
+      };
+    }
+
+    function fixed(value, displayBase, source, noteText, min=value, max=value) {
+      return {
+        base: value,
+        baseMin: min,
+        baseMax: max,
+        displayBase,
+        m2m3: value,
+        m2m3Min: min,
+        m2m3Max: max,
+        displayM2M3: min === max ? String(Math.round(value)) : `${Math.round(min)}–${Math.round(max)}`,
+        fixed: true,
+        source,
+        note: noteText
+      };
+    }
+
+    // TN175 Table Q5.5.4 / Q6.10: SAMI and WP-A interlayers.
+    if (tr === 'SAMI' || tr.includes('WPA') || tr.includes('WP-A')) {
+      return ranged(
+        1000,
+        1100,
+        '1000–1100/ALD',
+        'TN175 Table Q5.5.4 / Table Q6.10',
+        'TN175 SAMI/WP-A interlayer aggregate spread rate is 1000–1100/ALD. TN175 notes SAMI/WP-A aggregate spread rates are typically 20% lighter than standard single/single seal spread rates to ensure asphalt-layer adhesion.'
+      );
+    }
+
+    // TN175 Table Q5.5.4: S/S waterproofing under asphalt.
+    if (tr.includes('S/S') || tr.includes('WATERPROOFING')) {
+      if (agg.includes('7')) {
+        return fixed(220, '220', 'TN175 Table Q5.5.4', 'TN175 S/S under asphalt with 7 mm aggregate uses typical spread rate 220 m²/m³.');
+      }
+      return ranged(1000, 1100, '1000–1100/ALD', 'TN175 Table Q5.5.4', 'TN175 S/S under asphalt typical spread rate is 1000–1100/ALD for 14 mm and 10 mm aggregate.');
+    }
+
+    // TN175 Table Q6.12: double/double second application, little/no trafficking between applications.
+    if (isSecond) {
+      if (agg.includes('5')) {
+        return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application with 7 or 5 mm no-ALD uses range 180–250 m²/m³.', 180, 250);
+      }
+      if (agg.includes('7')) {
+        return ranged(800, 850, '800–850/ALD', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate spread rate range is 800/ALD–850/ALD.');
+      }
+      return ranged(850, 900, '850–900/ALD', 'TN175 Table Q6.12', 'TN175 double/double second application 10 mm aggregate spread rate range is 850/ALD–900/ALD.');
+    }
+
+    // TN175 Table Q6.11: double/double first application.
+    if (isFirstDouble) {
+      const cutbackEmulsion = isEmulsionOrCutbackBinder(binder);
+      base = cutbackEmulsion ? 850 : 950;
+      const val = base / aldNum;
+      return {
+        base,
+        baseMin: base,
+        baseMax: base,
+        displayBase: `${base}/ALD`,
+        m2m3: val,
+        m2m3Min: val,
+        m2m3Max: val,
+        displayM2M3: String(Math.round(val)),
+        fixed: false,
+        source: 'TN175 Table Q6.11',
+        note: `TN175 double/double first application spread rate ${base}/ALD applied based on binder class.`
+      };
+    }
+
+    // TN175 Table Q6.8: single/single seals. This is the bug that previously fell back to 900/ALD.
+    if (isSingle) {
+      if (cls === '14_PLUS') {
+        return ranged(900, 950, '900–950/ALD', 'TN175 Table Q6.8', 'TN175 single/single 14, 16 or 20 mm aggregate spread rate range is 900/ALD–950/ALD.');
+      }
+      if (cls === '10') {
+        return ranged(800, 850, '800–850/ALD', 'TN175 Table Q6.8', 'TN175 single/single 10 mm aggregate spread rate range is 800/ALD–850/ALD.');
+      }
+      return ranged(750, 800, '750–800/ALD or 180–230 no-ALD', 'TN175 Table Q6.8', 'TN175 single/single 7 or 5 mm aggregate spread rate range is 750/ALD–800/ALD, or 180–230 m²/m³ where no ALD is used.');
+    }
+  }
 
   // AGPT04K-26 aggregate spread rules from Tables 6.8, 6.11 and 6.12.
-  // Do not use the double/double first-coat 950/ALD rate for a single/single seal.
-  let base = 900;
-
   if (tr === 'SAMI' || tr.includes('WATERPROOFING')) {
     base = 1000;
   } else if (st.includes('DOUBLE 2ND')) {
-    // Table 6.12: second application uses 900/ALD for 10 mm and 7 mm,
-    // and a fixed 225 m²/m³ for 5 mm with no ALD.
-    if (agg.includes('5')) return { base: 225, m2m3: 225, fixed: true };
+    if (agg.includes('5')) return { base: 225, displayBase:'225', m2m3: 225, m2m3Min:225, m2m3Max:225, displayM2M3:'225', fixed: true, source:'AGPT04K-26 Table 6.12' };
     base = 900;
   } else if (st.includes('DOUBLE 1ST')) {
-    // Table 6.11: first application double/double.
-    base = (b.includes('EMULSION') || b === 'AMC4' || b === 'AMC5') ? 850 : 950;
+    base = isEmulsionOrCutbackBinder(binder) ? 850 : 950;
   } else {
-    // Table 6.8: single/single seal.
-    base = (b.includes('EMULSION') || b === 'AMC4' || b === 'AMC5' || tr.includes('UNMODIFIED EMULSION') || tr.includes('HI-FLOAT') || tr.includes('PRIMER')) ? 800 : 900;
+    base = isEmulsionOrCutbackBinder(binder) ? 800 : 900;
   }
+  const m2m3 = base / aldNum;
+  return { base, baseMin:base, baseMax:base, displayBase:String(base), m2m3, m2m3Min:m2m3, m2m3Max:m2m3, displayM2M3:String(Math.round(m2m3)), fixed: false, source:'AGPT04K-26 Tables 6.8 / 6.11 / 6.12' };
+}
 
-  const m2m3 = base / Math.max(asNum(ald, 1), 0.1);
-  return { base, m2m3, fixed: false };
-}
-function calculateCoat(v) {
-  const shvPct = Math.max(0, asNum(v.shvPct));
-  const lhvPct = Math.max(0, asNum(v.lhvPct));
-  const hvPct = Math.min(100, shvPct + lhvPct);
-  const ehvPct = Math.min(100, shvPct + (lhvPct * 3));
-  const lvPct = Math.max(0, 100 - hvPct);
-  const traffic = compoundTraffic(v);
-  const samiMode = isSamiTreatment(v.treatment);
-  const vfRaw = vehicleFactor(traffic.vld, v.sealType);
-  const vtRaw = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
-  const shapeRaw = aggregateShapeAdjustment(v.flIndex);
-  const bf = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
-  const ar = surfaceTextureAllowance(v.spec, v.surfaceType, v.aggregateSize, v.surfaceTexture, v.sealType, v.treatment);
-  const otherRaw = allowanceNum(v.otherAdjustment);
-  const ald = asNum(v.aldMirror, 0);
-  const vf = samiMode ? 0 : vfRaw;
-  const vt = samiMode ? 0 : vtRaw;
-  const shape = samiMode ? { ...shapeRaw, va: 0, level: 'INFO', message: 'SAMI: aggregate shape adjustment not applied because VF is fixed at 0.17.' } : shapeRaw;
-  const otherAdjustment = samiMode ? 0 : otherRaw;
-  const designVf = samiMode ? 0.17 : (vf + shape.va + vt + otherAdjustment);
-  const baseBinder = designVf * ald;
-  const modifiedBinder = baseBinder * (bf ?? 0);
-  const aba = allowanceNum(v.aba);
-  const ap = allowanceNum(v.ap);
-  const ae = embedmentAllowance(traffic.vld, v.ballpin);
-  const binderBeforeRounding = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
-  const finalBinder = samiMode ? round(Math.round(binderBeforeRounding * 10) / 10, 1) : binderBeforeRounding;
-  const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
-}
 function calculate() {
   const v = formValues();
   const result = calculateCoat(v);
@@ -563,8 +856,8 @@ function render(e) {
   setText('apOut', round(r.ap,2));
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
-  setText('aggSpreadBaseOut', round(r.agg.base,0));
-  setText('aggSpreadOut', round(r.agg.m2m3,0));
+  setText('aggSpreadBaseOut', r.agg.displayBase || round(r.agg.base,0));
+  setText('aggSpreadOut', r.agg.displayM2M3 || round(r.agg.m2m3,0));
   const s2 = r.second;
   setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
   setText('vfOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vf,3).toFixed(3)) : '');
@@ -581,8 +874,8 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
-  setText('aggSpreadBaseOut2', s2 ? round(s2.agg.base,0) : '');
-  setText('aggSpreadOut2', s2 ? round(s2.agg.m2m3,0) : '');
+  setText('aggSpreadBaseOut2', s2 ? (s2.agg.displayBase || round(s2.agg.base,0)) : '');
+  setText('aggSpreadOut2', s2 ? (s2.agg.displayM2M3 || round(s2.agg.m2m3,0)) : '');
   setText('rightTrafficOut', vld);
   setText('rightVfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
   $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
@@ -605,8 +898,8 @@ Aggregate: ${r.second.v.aggregateSize}
 ALD: ${round(r.second.ald,2)} mm
 Flakiness Index: ${r.second.v.flIndex}%
 Binder: ${round(r.second.finalBinder,2)} L/m²
-Design aggregate spread base: ${round(r.second.agg.base,0)} m²/m³
-Aggregate application rate: ${round(r.second.agg.m2m3,0)} m²/m³
+Design aggregate spread base: ${r.second.agg.displayBase || round(r.second.agg.base,0)} m²/m³
+Aggregate application rate: ${r.second.agg.displayM2M3 || round(r.second.agg.m2m3,0)} m²/m³
 Allowances: Ast N/A + Aba2 ${round(r.second.aba,2)} + Ap N/A + Ae N/A` : '';
   const text = `Spray seal design summary
 Project: ${r.v.projectName}
@@ -622,8 +915,8 @@ v/l/d: ${round(r.traffic.vld,0)}
 Binder: ${round(r.finalBinder,2)} L/m²
 Adjustments: ${r.samiMode ? 'Waterproofing/SAMI/WPA fixed VF 0.17; normal Va/Vt/Other not applied' : `Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}`}
 Allowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
-Design aggregate spread base: ${round(r.agg.base,0)} m²/m³
-Aggregate application rate: ${round(r.agg.m2m3,0)} m²/m³${secondText}
+Design aggregate spread base: ${r.agg.displayBase || round(r.agg.base,0)} m²/m³
+Aggregate application rate: ${r.agg.displayM2M3 || round(r.agg.m2m3,0)} m²/m³${secondText}
 
 Design notes:
 ${r.notes.map(n => `- ${n.level} | ${n.field}: ${n.message}${n.source ? ` (${n.source})` : ''}`).join('\n')}`;
