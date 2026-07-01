@@ -1,4 +1,4 @@
-[source-extraction-summary.md](https://github.com/user-attachments/files/29484661/source-extraction-summary.md)
+[Uploading source-extraction-summary.md…]()
 # Seal Design workbook extraction — Calculation + Lookups only
 
 Source file: `GithubSeal Design - Final.xlsm`
