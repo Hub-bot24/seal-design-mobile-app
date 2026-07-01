@@ -174,6 +174,14 @@ function allowanceNum(v) {
   const n = asNum(v, 0);
   return Number.isFinite(n) ? n : 0;
 }
+function isWaterproofingFixedVfTreatment(treatment) {
+  const tr = norm(treatment);
+  return tr === 'SAMI' || tr === 'WPA' || tr.includes('WATERPROOFING');
+}
+
+function isSamiTreatment(treatment) {
+  return isWaterproofingFixedVfTreatment(treatment);
+}
 function buildDesignNotes(r) {
   const notes = [];
   const spec = norm(r.v.spec);
@@ -188,6 +196,14 @@ function buildDesignNotes(r) {
   const cutback = isCutbackBinder(r.v.binder);
   const isSecondCoat = String(r.v._secondCoat || '') === '1';
   const coatPrefix = isSecondCoat ? 'Second coat – ' : '';
+
+  if (r.samiMode) {
+    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / SAMI / WPA DESIGN VOIDS FACTOR', `${r.v.treatment} selected. Design voids factor VF is fixed at 0.17; normal basic voids factor and Va/Vt/Other adjustments are not applied.`, 'AGPT04K-26 Section 5.5.4'));
+    notes.push(note('APPLIED', coatPrefix + 'WATERPROOFING / INTERLAYER TREATMENT', `${r.v.treatment} is treated as a waterproofing/interlayer style treatment. If it will be left under traffic for longer, review whether it should be designed as a SAM or normal wearing seal instead.`, 'AGPT04K-26 Sections 3.3.6 and 5.5.4'));
+    if (r.finalBinder < 1.8) {
+      notes.push(note('WARNING', coatPrefix + 'WATERPROOFING / SAMI MINIMUM BINDER RATE', `${r.v.treatment} calculated binder rate is ${round(r.finalBinder,1).toFixed(1)} L/m². 4K recommends a minimum design binder application rate of 1.8 L/m² for effective crack reflection performance where this SAMI-style rule is used.`, 'AGPT04K-26 Section 5.5.4'));
+    }
+  }
 
   if (spec === 'TN175' && !isSecondCoat) {
     notes.push(note('CHECK', 'SPEC', 'TN175 mode selected. Use TN175/TMR-specific rules and project requirements for this design.', 'TN175'));
@@ -396,22 +412,28 @@ function calculateCoat(v) {
   const ehvPct = Math.min(100, shvPct + (lhvPct * 3));
   const lvPct = Math.max(0, 100 - hvPct);
   const traffic = compoundTraffic(v);
-  const vf = vehicleFactor(traffic.vld, v.sealType);
-  const vt = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
-  const shape = aggregateShapeAdjustment(v.flIndex);
+  const samiMode = isSamiTreatment(v.treatment);
+  const vfRaw = vehicleFactor(traffic.vld, v.sealType);
+  const vtRaw = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
+  const shapeRaw = aggregateShapeAdjustment(v.flIndex);
   const bf = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
   const ar = surfaceTextureAllowance(v.surfaceType, v.aggregateSize, v.surfaceTexture, v.sealType, v.treatment);
-  const otherAdjustment = allowanceNum(v.otherAdjustment);
+  const otherRaw = allowanceNum(v.otherAdjustment);
   const ald = asNum(v.aldMirror, 0);
-  const designVf = vf + shape.va + vt + otherAdjustment;
+  const vf = samiMode ? 0 : vfRaw;
+  const vt = samiMode ? 0 : vtRaw;
+  const shape = samiMode ? { ...shapeRaw, va: 0, level: 'INFO', message: 'SAMI: aggregate shape adjustment not applied because VF is fixed at 0.17.' } : shapeRaw;
+  const otherAdjustment = samiMode ? 0 : otherRaw;
+  const designVf = samiMode ? 0.17 : (vf + shape.va + vt + otherAdjustment);
   const baseBinder = designVf * ald;
   const modifiedBinder = baseBinder * (bf ?? 0);
   const aba = allowanceNum(v.aba);
   const ap = allowanceNum(v.ap);
   const ae = embedmentAllowance(traffic.vld, v.ballpin);
-  const finalBinder = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
+  const binderBeforeRounding = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
+  const finalBinder = samiMode ? round(Math.round(binderBeforeRounding * 10) / 10, 1) : binderBeforeRounding;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, vf, vt, shape, bf, ar, aba, ap, ae, otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, agg, notes: [] };
 }
 function calculate() {
   const v = formValues();
@@ -527,9 +549,9 @@ function render(e) {
   setText('yearCountOut', r.traffic.years);
   setText('designAadtBig', designAadt);
   setText('designTrafficOut', vld);
-  setText('vfOut', round(r.vf,3).toFixed(3));
-  setText('vaOut', round(r.shape.va,3));
-  setText('vtOut', round(r.vt,3));
+  setText('vfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
+  setText('vaOut', r.samiMode ? 'N/A' : round(r.shape.va,3));
+  setText('vtOut', r.samiMode ? 'N/A' : round(r.vt,3));
   setText('designVfOut', round(r.designVf,3).toFixed(3));
   setText('aldCalcOut', round(r.ald,2));
   setText('baseBinderOut', round(r.baseBinder,2).toFixed(2));
@@ -544,10 +566,10 @@ function render(e) {
   setText('aggSpreadOut', round(r.agg.m2m3,0));
   const s2 = r.second;
   setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
-  setText('vfOut2', s2 ? round(s2.vf,3).toFixed(3) : '');
-  setText('vaOut2', s2 ? round(s2.shape.va,3) : '');
-  setText('vtOut2', s2 ? round(s2.vt,3) : '');
-  setText('otherAdjustmentOut2', s2 ? round(s2.otherAdjustment,3) : '');
+  setText('vfOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vf,3).toFixed(3)) : '');
+  setText('vaOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.shape.va,3)) : '');
+  setText('vtOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vt,3)) : '');
+  setText('otherAdjustmentOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.otherAdjustment,3)) : '');
   setText('designVfOut2', s2 ? round(s2.designVf,3).toFixed(3) : '');
   setText('aldCalcOut2', s2 ? round(s2.ald,2) : '');
   setText('baseBinderOut2', s2 ? round(s2.baseBinder,2).toFixed(2) : '');
@@ -561,7 +583,7 @@ function render(e) {
   setText('aggSpreadBaseOut2', s2 ? round(s2.agg.base,0) : '');
   setText('aggSpreadOut2', s2 ? round(s2.agg.m2m3,0) : '');
   setText('rightTrafficOut', vld);
-  setText('rightVfOut', round(r.vf,3).toFixed(3));
+  setText('rightVfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
   $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
   renderInlineNotes(r.notes);
   localStorage.setItem('seal-design-form', JSON.stringify(r.v));
@@ -597,7 +619,7 @@ Client AADT: ${r.v.initialAadt}
 Design AADT: ${round(r.traffic.aadt,0)}
 v/l/d: ${round(r.traffic.vld,0)}
 Binder: ${round(r.finalBinder,2)} L/m²
-Adjustments: Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}
+Adjustments: ${r.samiMode ? 'Waterproofing/SAMI/WPA fixed VF 0.17; normal Va/Vt/Other not applied' : `Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}`}
 Allowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
 Design aggregate spread base: ${round(r.agg.base,0)} m²/m³
 Aggregate application rate: ${round(r.agg.m2m3,0)} m²/m³${secondText}
