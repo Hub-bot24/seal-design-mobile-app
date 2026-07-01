@@ -938,7 +938,7 @@ function render(e) {
   setText('apOut', round(r.ap,2));
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
-  setText('aggSpreadBaseOut', r.agg.displayBase || round(r.agg.base,0));
+  setText('aggSpreadBaseOut', cleanAggregateBaseDisplay(r.agg.displayBase || round(r.agg.base,0)));
   setText('aggSpreadOut', r.agg.displayM2M3 || round(r.agg.m2m3,0));
   const s2 = r.second;
   setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
@@ -956,7 +956,7 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
-  setText('aggSpreadBaseOut2', s2 ? (s2.agg.displayBase || round(s2.agg.base,0)) : '');
+  setText('aggSpreadBaseOut2', s2 ? cleanAggregateBaseDisplay(s2.agg.displayBase || round(s2.agg.base,0)) : '');
   setText('aggSpreadOut2', s2 ? (s2.agg.displayM2M3 || round(s2.agg.m2m3,0)) : '');
   setText('rightTrafficOut', vld);
   setText('rightVfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
@@ -980,7 +980,7 @@ Aggregate: ${r.second.v.aggregateSize}
 ALD: ${round(r.second.ald,2)} mm
 Flakiness Index: ${r.second.v.flIndex}%
 Binder: ${round(r.second.finalBinder,2)} L/m²
-Design aggregate spread base: ${r.second.agg.displayBase || round(r.second.agg.base,0)} m²/m³
+Design aggregate spread base: ${cleanAggregateBaseDisplay(r.second.agg.displayBase || round(r.second.agg.base,0))} m²/m³
 Aggregate application rate: ${r.second.agg.displayM2M3 || round(r.second.agg.m2m3,0)} m²/m³
 Allowances: Ast N/A + Aba2 ${round(r.second.aba,2)} + Ap N/A + Ae N/A` : '';
   const text = `Spray seal design summary
@@ -997,7 +997,7 @@ v/l/d: ${round(r.traffic.vld,0)}
 Binder: ${round(r.finalBinder,2)} L/m²
 Adjustments: ${r.samiMode ? 'Waterproofing/SAMI/WPA fixed VF 0.17; normal Va/Vt/Other not applied' : `Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}`}
 Allowances: Ast ${round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
-Design aggregate spread base: ${r.agg.displayBase || round(r.agg.base,0)} m²/m³
+Design aggregate spread base: ${cleanAggregateBaseDisplay(r.agg.displayBase || round(r.agg.base,0))} m²/m³
 Aggregate application rate: ${r.agg.displayM2M3 || round(r.agg.m2m3,0)} m²/m³${secondText}
 
 Design notes:
