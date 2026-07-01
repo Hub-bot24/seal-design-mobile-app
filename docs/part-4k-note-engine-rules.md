@@ -1,4 +1,4 @@
-[Uploading part-4k-note-engine-rules.md…]()
+[part-4k-note-engine-rules.md](https://github.com/user-attachments/files/29532430/part-4k-note-engine-rules.md)
 # Part 4K note engine rules added in v11
 
 This version starts converting AGPT04K-26 guidance into contextual design notes.
