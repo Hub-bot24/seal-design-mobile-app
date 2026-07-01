@@ -194,3 +194,12 @@ footer{display:none}
 .final-results .r.muted-result b{
   background:#f4f9fd;
 }
+
+
+/* v27: design aggregate spread rate is calculated, not a final/adopted green output */
+.final-results .r.muted-result strong,
+body.double-mode .final-results .r.muted-result strong.second-val{
+  background:linear-gradient(180deg,#eaf8ff,#d9effb)!important;
+  color:#06395f!important;
+  font-size:17px!important;
+}
