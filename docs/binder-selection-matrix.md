@@ -1,4 +1,4 @@
-[binder-selection-matrix.md](https://github.com/user-attachments/files/29530895/binder-selection-matrix.md)
+[Uploading binder-selection-matrix.md…]()
 # Binder Selection Matrix (from Lookups tab)
 
 Generated from `Lookups` PRODUCT LIST and treatment/type table.
