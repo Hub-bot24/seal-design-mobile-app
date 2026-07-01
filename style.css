@@ -146,3 +146,51 @@ body.double-mode .calc-table,body.double-mode .final-results{max-width:none}.sec
 footer{display:none}
 @media(max-width:1180px){#designForm{grid-template-columns:1fr}.traffic-layout{width:auto;display:grid;grid-template-columns:220px 230px 1fr}.design-panel{grid-template-columns:1fr}.premium-setup{border-left:0}.calc-table,.final-results{margin-left:0}.premium-setup{display:block}.aggregate-dock,.context-grid{grid-template-columns:1fr 1fr}.flags{max-height:320px}}
 @media(max-width:820px){main{padding:8px}.app-header{padding:10px 12px}#designForm{display:block}.traffic-layout{display:flex;width:100%;margin-bottom:10px}.design-panel{display:block;overflow-x:auto}.premium-setup{min-width:560px}.calc-table,.final-results{min-width:760px;margin:10px}.aggregate-dock,.context-grid{grid-template-columns:1fr}.flags{max-height:none}}
+
+/* v26: compact note icon and aggregate spread base row */
+.select-note-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+  width:100%;
+  min-width:0;
+}
+.select-note-wrap select{
+  flex:1;
+  min-width:0;
+  padding-right:32px!important;
+}
+.mini-note-dot{
+  position:absolute;
+  right:8px;
+  top:50%;
+  transform:translateY(-50%);
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-style:normal;
+  font-size:11px;
+  font-weight:950;
+  line-height:1;
+  border:1px solid currentColor;
+  background:#fff;
+  box-shadow:0 4px 12px rgba(6,33,58,.12);
+  z-index:2;
+}
+.mini-note-dot.is-empty{display:none}
+.mini-note-dot.check{color:#b45309;background:#fff7ed}
+.mini-note-dot.warning{color:#b91c1c;background:#fff1f2}
+.mini-note-dot.applied{color:#008a3d;background:#ecfdf3}
+.mini-note-dot.info{color:#155a95;background:#eff6ff}
+.final-results .r.muted-result strong{
+  background:linear-gradient(180deg,#eaf8ff,#d9effb);
+  color:#06395f;
+  font-size:17px;
+}
+.final-results .r.muted-result span,
+.final-results .r.muted-result b{
+  background:#f4f9fd;
+}
