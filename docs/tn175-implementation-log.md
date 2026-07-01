@@ -1,4 +1,4 @@
-[tn175-implementation-log.md](https://github.com/user-attachments/files/29530595/tn175-implementation-log.md)
+[tn175-implementation-log.md](https://github.com/user-attachments/files/29530924/tn175-implementation-log.md)
 # TN175 Implementation Log — v32
 
 Source: TN175 Selection and Design of Sprayed Bituminous Treatments, Transport and Main Roads, December 2025.
@@ -32,5 +32,7 @@ TN175 is treated as an amendment layer to AGPT04K / Part 4K. Where TN175 has a r
 - Variable-rate seal design is currently a note/check engine only; it does not yet calculate separate wheelpath/non-wheelpath spray rates.
 
 
-## v33 correction
-Fixed TN175 aggregate spread-rate selection so TN175 Table Q6.8 is hard-applied for single/single seals before any 4K fallback. Example validation: TN175 + Single Seal + 10 mm + ALD 8.4 now displays 800–850/ALD and 95–101 m²/m³, not 900/ALD and 107 m²/m³.
+## v35 stable hotfix
+- Rebuilt from stable v32 to restore the missing calculateCoat function.
+- Re-applied hard TN175 Table Q6.8/Q6.11/Q6.12 spread-rate override.
+- Fixes v34 start failure/zero outputs.
