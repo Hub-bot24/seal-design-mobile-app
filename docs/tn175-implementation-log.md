@@ -1,39 +1,36 @@
-[tn175-implementation-log.md](https://github.com/user-attachments/files/29530144/tn175-implementation-log.md)
-# TN175 implementation log
+[tn175-implementation-log.md](https://github.com/user-attachments/files/29530595/tn175-implementation-log.md)
+# TN175 Implementation Log — v32
 
-## Phase 1 — lookup start
+Source: TN175 Selection and Design of Sprayed Bituminous Treatments, Transport and Main Roads, December 2025.
 
-This build starts TN175 from the workbook **Lookups** tab only. It uses the extracted TN175 matrix for:
+## Implemented as TN175 override layer
+TN175 is treated as an amendment layer to AGPT04K / Part 4K. Where TN175 has a rule/table, TN175 overrides 4K. Where TN175 is silent, 4K logic remains the fallback.
 
-- treatment options
-- binder dropdowns
-- binder factor (BF)
+## v32 additions
+- Full TN175 aggregate spread-rate engine display now uses ranges where TN175 gives ranges instead of a fake single number:
+  - Q6.8 single/single seals: 14/16/20, 10, 7/5, and 7/5 no-ALD guidance.
+  - Q6.9 scatter coat rate range noted for future treatment wiring.
+  - Q6.10 SAMI/WP-A 1000–1100/ALD.
+  - Q6.11 double/double first application: 950/ALD or 850/ALD depending binder class.
+  - Q6.12 double/double second application: 10 mm, 7 mm, and 7/5 no-ALD ranges.
+- TN175 Table Q5.5.4 spray-rate checks added for S/S under asphalt, WP-A and SAMI.
+- SAMI / WP-A remains fixed VF = 0.17 using TN175/Part 4K Equation 4 style binder calculation.
+- Emulsion note added: residual binder rate is converted to approximate emulsion spray rate using detected binder content (60%, 67% or explicit % in product text). Supplier/MRTS12 product binder content must still be confirmed.
+- TN175 variable-rate spray review note added for high EHV/AADT conditions, including ≥0.3 L/m² texture allowance trigger and <10°C seasonal warning.
+- Notes now state calculated spread-rate ranges in m²/m³ where the table gives ranges.
 
-The uploaded TN175 PDF says it outlines amendments to Part 4K for departmental projects and that aligned section/table references are to be read with Part 4K. That means TN175 cannot be treated as a completely separate calculator; it is a TMR layer over 4K.
+## Already implemented before v32
+- TN175 Q6.3 surface texture table and Note 1/2/3/4 handling.
+- TN175 ball penetration/embedment limit checks: 3.0 mm for >2000 v/l/d, 4.0 mm for ≤2000 v/l/d.
+- TN175 Q4.3.2 double seal ALD/interlock review.
+- TN175 Q6.4/Q6.5 binder factor fallback rules.
+- TN175 initial seal AMC7/cutback notes.
 
-## Important guardrail
+## Still deliberately not certified
+- Every TN175 rule still needs validation against known Excel outputs before real design use.
+- Scatter coat is included as a rule source but not fully exposed as a dedicated treatment screen yet.
+- Variable-rate seal design is currently a note/check engine only; it does not yet calculate separate wheelpath/non-wheelpath spray rates.
 
-Where a TN175-specific rule has not yet been coded, the app still falls back to the current AGPT04K-26 engine and displays a TN175 validation note. Do not call those rows certified until they are checked page by page.
 
-## TN175 lookup combinations included
-
-- **Double 1st Coat / Conventional Seal**: C170 (BF 1.0), C240 (BF 1.0), C320 (BF 1.0), M500 (BF 1.1), AMC5 (BF 1.0), AMC6 (BF 1.0), AMC7 (BF 1.0)
-- **Double 1st Coat / HSS2-H**: S15E (BF 1.0), S20E (BF 1.1), S15R (BF 1.1), S15RF (BF 1.1)
-- **Double 1st Coat / HSS2-M**: S10E (BF 1.0), S35E (BF 1.0), S15R (BF 1.1), S15RF (BF 1.1)
-- **Double 1st Coat / SAM-R**: S15E (BF 1.2), S20E (BF 1.3), S15R (BF 1.3), S15RF (BF 1.3)
-- **Double 1st Coat / SAM-S**: S10E (BF 1.2), S15E (BF 1.2), S35E (BF 1.2), S15R (BF 1.3), S15RF (BF 1.3)
-- **Double 2nd Coat / Conventional Seal**: C170 (BF 1.0), C240 (BF 1.0), C320 (BF 1.0), M500 (BF 1.1), AMC5 (BF 1.0), AMC6 (BF 1.0), AMC7 (BF 1.0)
-- **Double 2nd Coat / HSS2-H**: S15E (BF 1.0), S20E (BF 1.1), S15R (BF 1.1), S15RF (BF 1.1)
-- **Double 2nd Coat / HSS2-M**: S10E (BF 1.0), S35E (BF 1.0), S15R (BF 1.1), S15RF (BF 1.1)
-- **Double 2nd Coat / SAM-R**: S15E (BF 1.2), S20E (BF 1.3), S15R (BF 1.3), S15RF (BF 1.3)
-- **Double 2nd Coat / SAM-S**: S10E (BF 1.2), S15E (BF 1.2), S35E (BF 1.2), S15R (BF 1.3), S15RF (BF 1.3)
-- **Single / Aggregate retention(AR)**: S35E (BF 1.0), S10E (BF 1.1)
-- **Single / Bridge Deck Waterproofing**: S25E (BF 1.3)
-- **Single / Conventional Seal**: C170 (BF 1.0), C240 (BF 1.0), C320 (BF 1.0), M500 (BF 1.1), AMC5 (BF 1.0), AMC6 (BF 1.0), AMC7 (BF 1.0)
-- **Single / HSS1-H**: S15E (BF 1.11), S15R (BF 1.11), S20E (BF 1.11), S15RF (BF 1.11)
-- **Single / HSS1-M**: S10E (BF 1.0), S35E (BF 1.0), S15R (BF 1.1), S15RF (BF 1.1), S9R (BF 1.0), S9RF (BF 1.0)
-- **Single / Interlayer Bond Waterproofing**: S25E (BF 1.3), C170 (BF 1.3)
-- **Single / SAM-R**: S15R (BF 1.31), S15E (BF 1.31), S20E (BF 1.31), S15RF (BF 1.31)
-- **Single / SAM-S**: S10E (BF 1.2), S35E (BF 1.2)
-- **Single / SAMI**: S25E (BF 1.3), S18RF (BF 1.5)
-- **Single / Unmodified Emulsion Seal**: Emulsion(≥67%) (BF 1.1), Emulsion(60%) (BF 1.0), Emulsion(≥67%)-Under Asphalt (BF 1.1), Emulsion(60%)-Under Asphalt (BF 1.0)
+## v33 correction
+Fixed TN175 aggregate spread-rate selection so TN175 Table Q6.8 is hard-applied for single/single seals before any 4K fallback. Example validation: TN175 + Single Seal + 10 mm + ALD 8.4 now displays 800–850/ALD and 95–101 m²/m³, not 900/ALD and 107 m²/m³.
