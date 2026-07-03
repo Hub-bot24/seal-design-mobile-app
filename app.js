@@ -9,6 +9,19 @@ const norm = (v) => String(v ?? '').trim().toUpperCase();
 const asNum = (v, fallback = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
 const round = (n, dp = 3) => Number.isFinite(n) ? Number(n.toFixed(dp)) : n;
 
+const storage = {
+  get(key) {
+    try { return window.localStorage?.getItem(key); } catch (_) { return null; }
+  },
+  set(key, value) {
+    try { window.localStorage?.setItem(key, value); } catch (_) { /* storage unavailable: ignore */ }
+  },
+  remove(key) {
+    try { window.localStorage?.removeItem(key); } catch (_) { /* storage unavailable: ignore */ }
+  }
+};
+
+
 
 function uiSealTypeToLookupType(value) {
   const v = norm(value);
@@ -20,6 +33,36 @@ function uiSealTypeLabel(value) {
   return norm(value).includes('DOUBLE') ? 'Double Seal' : 'Single Seal';
 }
 function isDoubleSeal(value) { return norm(value).includes('DOUBLE'); }
+
+function cleanAggregateBaseDisplay(value) {
+  return String(value ?? '')
+    .replace(/\s*\/\s*ALD/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+
+function aggDisplayBaseCell(agg) {
+  if (!agg || typeof agg !== 'object') return '—';
+  return cleanAggregateBaseDisplay(agg.displayBase ?? agg.base ?? '—');
+}
+function aggDisplayRateCell(agg) {
+  if (!agg || typeof agg !== 'object') return '—';
+  if (agg.displayM2M3 !== undefined && agg.displayM2M3 !== null && String(agg.displayM2M3).trim() !== '') return String(agg.displayM2M3);
+  if (Number.isFinite(agg.m2m3)) return String(Math.round(agg.m2m3));
+  return '—';
+}
+function ensureAggregateSpreadResult(v, existingAgg) {
+  try {
+    if (existingAgg && typeof existingAgg === 'object' && (existingAgg.displayBase || Number.isFinite(existingAgg.base))) return existingAgg;
+    return aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, asNum(v.aldMirror, 0), v.aggregateSize);
+  } catch (err) {
+    console.error('Aggregate spread-rate calculation failed', err);
+    return { displayBase: 'CHECK', displayM2M3: 'CHECK', source: 'Calculation error' };
+  }
+}
+
+
 
 function uniqueRows(tableName, field) {
   const rows = state.lookups.tables[tableName]?.rows || [];
@@ -988,8 +1031,9 @@ function render(e) {
   setText('apOut', round(r.ap,2));
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
-  setText('aggSpreadBaseOut', cleanAggregateBaseDisplay(r.agg.displayBase || round(r.agg.base,0)));
-  setText('aggSpreadOut', r.agg.displayM2M3 || round(r.agg.m2m3,0));
+  const aggDisplay = ensureAggregateSpreadResult(r.v, r.agg);
+  setText('aggSpreadBaseOut', aggDisplayBaseCell(aggDisplay));
+  setText('aggSpreadOut', aggDisplayRateCell(aggDisplay));
   const s2 = r.second;
   setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
   setText('vfOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vf,3).toFixed(3)) : '');
@@ -1006,16 +1050,17 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
-  setText('aggSpreadBaseOut2', s2 ? cleanAggregateBaseDisplay(s2.agg.displayBase || round(s2.agg.base,0)) : '');
-  setText('aggSpreadOut2', s2 ? (s2.agg.displayM2M3 || round(s2.agg.m2m3,0)) : '');
+  const aggDisplay2 = s2 ? ensureAggregateSpreadResult(s2.v, s2.agg) : null;
+  setText('aggSpreadBaseOut2', s2 ? aggDisplayBaseCell(aggDisplay2) : '');
+  setText('aggSpreadOut2', s2 ? aggDisplayRateCell(aggDisplay2) : '');
   setText('rightTrafficOut', vld);
   setText('rightVfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
   $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
   renderInlineNotes(r.notes);
-  localStorage.setItem('seal-design-form', JSON.stringify(r.v));
+  storage.set('seal-design-form', JSON.stringify(r.v));
 }
 function restore() {
-  const saved = JSON.parse(localStorage.getItem('seal-design-form') || '{}');
+  const saved = JSON.parse(storage.get('seal-design-form') || '{}');
   for (const [k,v] of Object.entries(saved)) { const el = $(`[name="${k}"]`); if (el) el.value = v; }
   syncAld($('[name="ald"]'));
 }
@@ -1076,11 +1121,11 @@ async function init() {
   $('#designForm').addEventListener('input', render);
   $('#copyBtn').addEventListener('click', copySummary);
   $('#printBtn').addEventListener('click', () => window.print());
-  $('#resetBtn').addEventListener('click', () => { localStorage.removeItem('seal-design-form'); location.reload(); });
+  $('#resetBtn').addEventListener('click', () => { storage.remove('seal-design-form'); location.reload(); });
   render();
 }
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); state.deferredPrompt = e; const b=$('#installBtn'); b.hidden=false; b.onclick=()=>state.deferredPrompt.prompt(); });
 init().catch(err => {
   console.error(err);
-  document.body.insertAdjacentHTML('afterbegin', `<div style="background:#fee2e2;border:2px solid #991b1b;padding:12px;margin:12px;font-weight:800">App failed to start. Upload the latest index.html, style.css and app.js from v40, then press Ctrl+F5.</div>`);
+  document.body.insertAdjacentHTML('afterbegin', `<div style="background:#fee2e2;border:2px solid #991b1b;padding:12px;margin:12px;font-weight:800">App failed to start. Upload the latest index.html, style.css and app.js from v42, then press Ctrl+F5.</div>`);
 });
