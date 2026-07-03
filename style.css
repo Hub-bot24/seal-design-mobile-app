@@ -1,4 +1,4 @@
-\:root{
+:root{
   --bg0:#dfeaf3;
   --bg1:#f7fbff;
   --paper:#ffffff;
@@ -203,3 +203,18 @@ body.double-mode .final-results .r.muted-result strong.second-val{
   color:#06395f!important;
   font-size:17px!important;
 }
+
+/* v41 hotfix: make ROAD design area readable and stop cramped right rail */
+.design-panel{grid-template-columns:minmax(650px,1fr) 360px!important;}
+.context-card label{grid-template-columns:110px minmax(0,1fr)!important;}
+.agg-card label{grid-template-columns:110px minmax(0,1fr)!important;}
+.context-card select[name="designArea"]{
+  font-size:11.5px!important;
+  text-align:left!important;
+  padding-left:8px!important;
+  padding-right:4px!important;
+  white-space:normal!important;
+}
+.context-card select{min-width:0;width:100%;}
+.setup-field select,.agg-card select,.context-card select{overflow:visible;}
+@media(max-width:1200px){.design-panel{grid-template-columns:minmax(650px,1fr) 330px!important}.context-card select[name="designArea"]{font-size:10.5px!important}}
