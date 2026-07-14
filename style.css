@@ -392,3 +392,31 @@ body.double-mode .calc-table{
     grid-template-columns:1fr!important;
   }
 }
+
+/* v49: make first/second aggregate cards identical size in double-seal mode */
+body.double-mode .aggregate-dock{
+  align-items:stretch!important;
+}
+body.double-mode .agg-card{
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:54px repeat(4,48px)!important;
+}
+body.double-mode .agg-title{
+  min-height:54px!important;
+  display:grid!important;
+  align-content:center!important;
+}
+body.double-mode .agg-title b,
+body.double-mode .agg-title em{
+  line-height:1.05!important;
+}
+body.double-mode .agg-card label{
+  min-height:48px!important;
+  height:48px!important;
+}
+body.double-mode .agg-card input,
+body.double-mode .agg-card select{
+  height:48px!important;
+  min-height:48px!important;
+}
