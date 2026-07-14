@@ -822,12 +822,15 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
     }
 
     // TN175 Table Q6.12: double/double second application, little/no trafficking between applications.
+    // Important: the 180–250 m²/m³ row is ONLY for 7 mm or 5 mm where no ALD is used.
+    // If an ALD is entered for a 7/5 option, treat it as the ALD-based 7 mm rule.
     if (isSecond) {
-      if (agg.includes('5')) {
-        return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application with 7 or 5 mm no-ALD uses range 180–250 m²/m³.', 180, 250);
+      const hasUsableAld = asNum(ald, 0) > 0;
+      if ((agg.includes('5') || agg.includes('7')) && !hasUsableAld) {
+        return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application uses 180–250 m²/m³ only for 7 or 5 mm aggregate when no ALD is used.', 180, 250);
       }
-      if (agg.includes('7')) {
-        return ranged(800, 850, '800–850', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate spread rate range is 800/ALD–850/ALD.');
+      if (agg.includes('7') || agg.includes('5')) {
+        return ranged(800, 850, '800–850', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate with ALD uses 800/ALD–850/ALD. The 180–250 row applies only when no ALD is used.');
       }
       return ranged(850, 900, '850–900', 'TN175 Table Q6.12', 'TN175 double/double second application 10 mm aggregate spread rate range is 850/ALD–900/ALD.');
     }
