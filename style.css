@@ -272,3 +272,61 @@ body.double-mode .final-results .r.muted-result strong.second-val{
   min-height:36px;
   font-size:12px;
 }
+
+/* v45 — Premium sellable UI pass: bigger text, aligned manual inputs, desktop command layout */
+:root{
+  --premium-navy:#061a2d;
+  --premium-blue:#0b5f9f;
+  --premium-cyan:#14a8e5;
+  --premium-green:#009f4d;
+  --premium-line:#0f2d49;
+  --premium-soft:#eef7fd;
+}
+body{font-size:16px;background:
+  radial-gradient(circle at 12% 4%, rgba(20,168,229,.22), transparent 30%),
+  radial-gradient(circle at 96% 8%, rgba(0,159,77,.16), transparent 28%),
+  linear-gradient(135deg,#d9edf8 0%,#f8fcff 55%,#e7f1f8 100%)!important;}
+.app-header{padding:18px 34px!important;background:rgba(250,253,255,.92)!important;border-bottom:1px solid rgba(15,45,73,.22)!important;}
+.app-header h1{font-size:30px!important;letter-spacing:-.035em!important}.eyebrow{font-size:12px!important;color:#0b5f9f!important}
+main{max-width:1720px!important;padding:18px 22px!important;}
+#designForm{grid-template-columns:270px minmax(1120px,1fr)!important;gap:22px!important;align-items:start!important;}
+.traffic-layout{width:270px!important;gap:14px!important;}
+.traffic-card,.year-card,.side-tool{border:1.5px solid var(--premium-line)!important;border-radius:18px!important;background:rgba(255,255,255,.96)!important;box-shadow:0 20px 48px rgba(6,26,45,.13)!important;}
+.row{grid-template-columns:1fr 112px!important;min-height:44px!important;}
+.row span,.row b{font-size:15px!important;padding:10px 13px!important;}
+.row output{font-size:17px!important;font-weight:950!important;text-align:center!important;}
+.inline-input input,.year-card .row input{font-size:17px!important;text-align:center!important;color:var(--premium-green)!important;background:#f5fff9!important;}
+.traffic-card .highlight b{font-size:16px!important}.big-aadt{padding:16px!important;margin:14px!important;border-radius:18px!important}.big-aadt span{font-size:12px!important}.big-aadt strong{font-size:42px!important}
+.breakdown-box{margin:0 14px 14px!important}.breakdown-box .break-head,.breakdown-box label{grid-template-columns:1fr 112px!important;min-height:38px!important}.breakdown-box span,.breakdown-box input,.breakdown-box output{font-size:15px!important}.side-tool summary{font-size:13px!important;padding:14px 16px!important}
+
+.design-grid{display:block!important;min-width:0!important;}
+.design-panel{grid-template-columns:minmax(820px,1fr) 390px!important;gap:16px!important;border-radius:28px!important;border:1.5px solid rgba(15,45,73,.42)!important;box-shadow:0 30px 90px rgba(6,26,45,.18)!important;background:rgba(255,255,255,.93)!important;}
+.design-panel h2{font-size:16px!important;padding:14px 18px!important;border-radius:27px 27px 0 0!important;background:linear-gradient(135deg,#041529,#0b5f9f 58%,#14a8e5)!important;}
+.premium-setup{padding:14px!important;background:linear-gradient(180deg,rgba(239,248,255,.95),rgba(255,255,255,.78))!important;}
+.setup-strip{gap:12px!important}.setup-field{border-radius:18px!important;border:1.5px solid rgba(15,45,73,.6)!important}.setup-field span{font-size:11px!important;padding:9px 12px 1px!important}.setup-field select{font-size:19px!important;min-height:46px!important;color:var(--premium-green)!important;}
+
+.aggregate-dock,.context-grid{gap:14px!important;}
+.agg-card,.context-card{border:1.5px solid rgba(15,45,73,.68)!important;border-radius:20px!important;box-shadow:0 18px 45px rgba(6,26,45,.12)!important;background:#fff!important;}
+.agg-title{padding:12px 14px!important;background:linear-gradient(135deg,#041529,#0b5f9f)!important}.agg-title b{font-size:12px!important}.agg-title em{font-size:9.5px!important}
+.context-title{font-size:12px!important;padding:11px 13px!important;background:#e8f4fc!important;color:#132e49!important;}
+.agg-card label,.context-card label,.context-card label:has(select[name="designArea"]){grid-template-columns:142px minmax(0,1fr)!important;min-height:44px!important;}
+.agg-card label span,.context-card label span{font-size:12px!important;padding:10px 12px!important;letter-spacing:.075em!important;color:#18334f!important;background:#f1f7fc!important;}
+.agg-card input,.agg-card select,.context-card input,.context-card select{min-height:44px!important;height:44px!important;font-size:17px!important;font-weight:950!important;text-align:center!important;color:var(--premium-green)!important;background:#fbfffd!important;}
+.context-card select[name="designArea"]{font-size:15px!important;white-space:normal!important;line-height:1.1!important;min-height:50px!important;height:auto!important;padding:6px 8px!important;}
+
+.calc-table{margin:16px 0 0 16px!important;border:1.5px solid var(--premium-line)!important;border-radius:20px!important;box-shadow:0 18px 42px rgba(6,26,45,.12)!important;background:#fff!important;}
+.calc-head{min-height:40px!important;font-size:12px!important}.calc-head span,.calc-head b{padding:10px 12px!important;}
+.calc-table .r,.final-results .r{min-height:42px!important;}
+.calc-table .r span,.final-results .r span{font-size:15px!important;padding:10px 13px!important;background:#e5f1fa!important;color:#061a2d!important;font-weight:950!important;}
+.calc-table .r b,.final-results .r b{font-size:13.5px!important;padding:10px 9px!important;color:#061a2d!important;font-weight:950!important;}
+.calc-table output{min-height:42px!important;font-size:18px!important;font-weight:950!important;color:#061a2d!important;}
+.calc-table input{min-height:42px!important;font-size:18px!important;color:var(--premium-green)!important;background:#f2fff7!important;text-align:center!important;}
+.section-title{font-size:13.5px!important;padding:9px 13px!important;background:#f3f9fe!important;color:#061a2d!important;}
+.final-results{margin:14px 0 18px 16px!important;border:1.5px solid var(--premium-line)!important;border-radius:20px!important;box-shadow:0 18px 42px rgba(6,26,45,.12)!important;}
+.final-results .r{min-height:48px!important}.final-results strong{font-size:26px!important;background:linear-gradient(180deg,#00bd65,#008841)!important;color:#fff!important;}.final-results .muted-result strong{font-size:20px!important;color:#063b5d!important;background:#dff1fb!important;}
+
+.flags{max-width:1120px!important;margin:22px auto 0!important;border-radius:24px!important;box-shadow:0 24px 70px rgba(6,26,45,.16)!important;}.flags h2{font-size:17px!important;padding:16px 20px!important}.note-card{font-size:15px!important;line-height:1.45!important}.note-card h3{font-size:16px!important}.actions{padding:14px 18px!important}.actions button{font-size:15px!important;padding:13px 18px!important}
+footer{font-size:13px!important;padding:20px!important;color:#536b82!important}
+@media(max-width:1400px){#designForm{grid-template-columns:260px minmax(1000px,1fr)!important}.design-panel{grid-template-columns:minmax(740px,1fr) 360px!important}.agg-card label,.context-card label,.context-card label:has(select[name="designArea"]){grid-template-columns:128px minmax(0,1fr)!important}}
+@media(max-width:1180px){#designForm{grid-template-columns:1fr!important}.traffic-layout{width:auto!important;display:grid!important;grid-template-columns:260px 280px 1fr!important}.design-panel{grid-template-columns:1fr!important}.premium-setup{border-left:0!important}.calc-table,.final-results{margin-left:0!important}.aggregate-dock,.context-grid{grid-template-columns:1fr 1fr!important}}
+@media(max-width:820px){body{font-size:15px}.traffic-layout{display:flex!important}.aggregate-dock,.context-grid{grid-template-columns:1fr!important}.premium-setup{min-width:620px!important}.calc-table,.final-results{min-width:860px!important;margin:10px!important}}
