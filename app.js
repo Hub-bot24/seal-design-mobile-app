@@ -368,34 +368,50 @@ function tn175BinderFactorFallback(sealType, treatment, binder) {
   const tr = norm(treatment);
   const b = norm(binder);
   const isDouble = type.includes('DOUBLE');
-  const isSecond = type.includes('2ND');
 
-  // TN175 Table Q6.4 (single/single) and Q6.5 (double/double) binder factors.
-  // These override Part 4K when SPEC = TN175.
+  // TN175 December 2025 binder factors.
+  // Single/single uses Table Q6.4. Double/double uses Table Q6.5.
+  // These override workbook/4K binder factors when SPEC = TN175.
+
+  // Conventional seal (S/S) / conventional double seal.
   if (b === 'M500') return 1.1;
   if (['C170','C240','C320'].includes(b) || b.includes('CRUMB')) return 1.0;
+
+  // Unmodified emulsion seal.
   if (b.includes('67') || b.includes('HBCE') || b.includes('HIGH BINDER CONTENT')) return 1.1;
   if (b.includes('EMULSION') || b.includes('60')) return 1.0;
 
+  // WP-A: Table Q6.4 lists S20E/S25E/S15R/S15RF/S18RF and C170 subject to Administrator approval at BF 1.3.
   if (tr.includes('WPA') || tr.includes('WP-A') || tr.includes('WATERPROOF')) {
     if (['S20E','S25E','S15R','S15RF','S18RF'].includes(b) || b === 'C170') return 1.3;
   }
+
+  // SAMI: Table Q6.4 lists S25E/S18RF at BF 1.3–1.52. App adopts lower end and flags designer confirmation.
   if (tr.includes('SAMI') || tr.includes('INTERLAYER')) {
-    if (['S25E','S18RF'].includes(b)) return 1.3; // lower end of TN175 1.3–1.52 range, designer note added.
+    if (['S25E','S18RF'].includes(b)) return 1.3;
   }
+
+  // SAM: single/single uses Table Q6.4; double/double uses Q6.5, where SAM binders are BF 1.1.
   if (tr.includes('SAM') && !tr.includes('SAMI')) {
     if (isDouble) return 1.1;
     if (['S10E','S35E','S9R','S9RF'].includes(b)) return 1.2;
     if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.31;
   }
+
+  // XSS appears in Q6.5 for double/double.
   if (tr.includes('XSS') || tr.includes('EXTREME')) {
     if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.1;
   }
+
+  // HSS1 (single) and HSS2 (double).
   if (tr.includes('HSS') || tr.includes('HIGH STRESS')) {
     if (['S10E','S35E','S9R','S9RF'].includes(b)) return 1.0;
     if (['S15E','S15R','S15RF','S20E'].includes(b)) return 1.1;
   }
   return null;
+}
+function tn175BinderFactorSource(sealType) {
+  return isDoubleFirst(sealType) ? 'TN175 Table Q6.5' : 'TN175 Table Q6.4';
 }
 function buildDesignNotes(r) {
   const notes = [];
@@ -425,7 +441,7 @@ function buildDesignNotes(r) {
     notes.push(note('APPLIED', 'TN175 / TMR mode', 'TN175 mode selected. TN175 is treated as a TMR amendment layer to Part 4K: TN175 rules override 4K where coded; 4K still applies where TN175 is silent.', 'TN175 Section 1'));
   }
   if (spec === 'TN175' && r.bf) {
-    notes.push(note('APPLIED', coatPrefix + 'TN175 binder factor', `Binder factor BF = ${r.bf} applied for ${r.v.treatment} with ${r.v.binder}. TN175 Table Q6.4 applies for single/single seals and Table Q6.5 applies for double/double seals.`, isSecondCoat ? 'TN175 Table Q6.5' : 'TN175 Table Q6.4 / Table Q6.5'));
+    notes.push(note('APPLIED', coatPrefix + 'TN175 binder factor', `Binder factor BF = ${r.bf} applied for ${r.v.treatment} with ${r.v.binder}. TN175 Table Q6.4 applies for single/single seals; Table Q6.5 applies for double/double seals.`, tn175BinderFactorSource(r.v.sealType)));
     const tr = norm(r.v.treatment);
     const b = norm(r.v.binder);
     if ((tr.includes('SAMI') || tr.includes('INTERLAYER')) && (b === 'S25E' || b === 'S18RF')) {
