@@ -73,8 +73,25 @@ function tableRows(name) { return state.lookups.tables[name]?.rows || []; }
 function safe(v){ return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function setOptions(select, values, preferred) {
   if (!select) return;
+  const preferredNorm = normaliseAggregateLabel(preferred);
   select.innerHTML = values.map(v => `<option value="${safe(v)}">${safe(v)}</option>`).join('');
-  if (preferred && values.some(v => norm(v) === norm(preferred))) select.value = values.find(v => norm(v) === norm(preferred));
+  if (preferredNorm && values.some(v => norm(v) === norm(preferredNorm))) select.value = values.find(v => norm(v) === norm(preferredNorm));
+}
+function normaliseAggregateLabel(v) {
+  const n = norm(v);
+  if (!n) return v;
+  if (n === '5 & 7MM' || n === '5 AND 7MM' || n === '5/7MM') return '7mm';
+  return v;
+}
+function aggregateSizeOptions() {
+  // Do not expose the old combined “5 & 7mm” option. TN175 Q6.3 can still group
+  // 5 mm and 7 mm internally for surface texture, but Q6.12 needs them split.
+  return ['10mm', '14mm and Greater', '7mm', '5mm', 'N/A'];
+}
+function aggregateTextureLookupLabel(v) {
+  const n = norm(v);
+  if (n === '5MM' || n === '7MM' || n === '5 & 7MM') return '5 & 7mm';
+  return v;
 }
 function binderRowsForSpec(spec) {
   const group = norm(spec) === 'TN175' ? 'TN175' : 'AGPT04K-26';
@@ -87,7 +104,7 @@ function binderRowsForSpec(spec) {
 }
 function populateOptions() {
   const specs = ['AGPT04K-26', 'TN175'];
-  const aggSizes = uniqueRows('LookupsTbl','B (Agg Size 2)');
+  const aggSizes = aggregateSizeOptions();
   const surfaces = uniqueRows('LookupsTbl','A (Agg Size 1)');
   setOptions($('[name="spec"]'), specs, 'TN175');
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
@@ -259,12 +276,16 @@ function isTn175SsUnderAsphalt(treatment) {
 
 function isTn175(spec) { return norm(spec) === 'TN175'; }
 function aggregateSizeClass(aggregateSize) {
+  const a = norm(aggregateSize);
+  if (a === 'N/A' || a.includes('NO ALD')) return 'NO_ALD';
   const n = parseFloat(String(aggregateSize || '').replace(/[^0-9.]/g, ''));
   if (!Number.isFinite(n)) return 'ALL';
   if (n <= 7) return '5_OR_7';
   if (n <= 10) return '10';
   return '14_PLUS';
 }
+function isFiveMmAggregate(aggregateSize) { return norm(aggregateSize) === '5MM'; }
+function isSevenMmAggregate(aggregateSize) { return norm(aggregateSize) === '7MM'; }
 function existingSurfaceClass(surfaceType) {
   const s = norm(surfaceType);
   if (s.includes('ASPHALT') || s.includes('MICRO')) return 'ASPHALT_MICRO';
@@ -554,7 +575,8 @@ function buildDesignNotes(r) {
     }
     if ((r.agg?.source || '').includes('TN175')) {
       const range = r.agg.displayM2M3 ? ` Calculated application rate display: ${r.agg.displayM2M3} m²/m³.` : '';
-      notes.push(note('APPLIED', coatPrefix + 'TN175 aggregate spread rate', (r.agg.note || `TN175 aggregate spread rate rule applied. Base ${r.agg.displayBase || r.agg.base} m²/m³.`) + range, r.agg.source));
+      const aggLevel = String(r.agg.displayBase || '').toUpperCase() === 'CHECK' || String(r.agg.displayM2M3 || '').toUpperCase() === 'CHECK' ? 'CHECK' : 'APPLIED';
+      notes.push(note(aggLevel, coatPrefix + 'TN175 aggregate spread rate', (r.agg.note || `TN175 aggregate spread rate rule applied. Base ${r.agg.displayBase || r.agg.base} m²/m³.`) + range, r.agg.source));
     }
     const bp = asNum(r.v.ballpin, NaN);
     const limit = r.traffic.vld > 2000 ? 3 : 4;
@@ -660,7 +682,7 @@ function surfaceTextureAllowance(spec, surfaceType, aggregateSize, sandPatch, se
 
   const row = tableRows('LookupsTbl').find(r =>
     norm(r.KeyA || r['A (Agg Size 1)']) === norm(surfaceType) &&
-    norm(r.KeyB || r['B (Agg Size 2)']) === norm(aggregateSize) &&
+    norm(r.KeyB || r['B (Agg Size 2)']) === norm(aggregateTextureLookupLabel(aggregateSize)) &&
     asNum(r['C (Min Sand Patch)']) <= sp &&
     asNum(r['D (Max Sand Patch)']) >= sp
   );
@@ -826,11 +848,19 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
     // If an ALD is entered for a 7/5 option, treat it as the ALD-based 7 mm rule.
     if (isSecond) {
       const hasUsableAld = asNum(ald, 0) > 0;
-      if ((agg.includes('5') || agg.includes('7')) && !hasUsableAld) {
-        return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application uses 180–250 m²/m³ only for 7 or 5 mm aggregate when no ALD is used.', 180, 250);
+      if ((isSevenMmAggregate(aggregateSize) || isFiveMmAggregate(aggregateSize) || agg.includes('5 & 7')) && !hasUsableAld) {
+        return fixed(225, '180–250', 'TN175 Table Q6.12', 'TN175 double/double second application uses 180–250 m²/m³ only for 7 mm or 5 mm aggregate where no ALD is used.', 180, 250);
       }
-      if (agg.includes('7') || agg.includes('5')) {
+      if (isSevenMmAggregate(aggregateSize)) {
         return ranged(800, 850, '800–850', 'TN175 Table Q6.12', 'TN175 double/double second application 7 mm aggregate with ALD uses 800/ALD–850/ALD. The 180–250 row applies only when no ALD is used.');
+      }
+      if (isFiveMmAggregate(aggregateSize)) {
+        return {
+          base: null, baseMin: null, baseMax: null, displayBase: 'CHECK',
+          m2m3: null, m2m3Min: null, m2m3Max: null, displayM2M3: 'CHECK',
+          fixed: false, source: 'TN175 Table Q6.12',
+          note: 'TN175 Table Q6.12 lists 7 mm with ALD as 800/ALD–850/ALD, and 7 or 5 mm with no ALD as 180–250 m²/m³. It does not clearly give a 5 mm with-ALD design rate. Confirm whether this 5 mm design is no-ALD or project-specific before adopting a rate.'
+        };
       }
       return ranged(850, 900, '850–900', 'TN175 Table Q6.12', 'TN175 double/double second application 10 mm aggregate spread rate range is 850/ALD–900/ALD.');
     }
