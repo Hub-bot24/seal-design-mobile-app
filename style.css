@@ -330,3 +330,27 @@ footer{font-size:13px!important;padding:20px!important;color:#536b82!important}
 @media(max-width:1400px){#designForm{grid-template-columns:260px minmax(1000px,1fr)!important}.design-panel{grid-template-columns:minmax(740px,1fr) 360px!important}.agg-card label,.context-card label,.context-card label:has(select[name="designArea"]){grid-template-columns:128px minmax(0,1fr)!important}}
 @media(max-width:1180px){#designForm{grid-template-columns:1fr!important}.traffic-layout{width:auto!important;display:grid!important;grid-template-columns:260px 280px 1fr!important}.design-panel{grid-template-columns:1fr!important}.premium-setup{border-left:0!important}.calc-table,.final-results{margin-left:0!important}.aggregate-dock,.context-grid{grid-template-columns:1fr 1fr!important}}
 @media(max-width:820px){body{font-size:15px}.traffic-layout{display:flex!important}.aggregate-dock,.context-grid{grid-template-columns:1fr!important}.premium-setup{min-width:620px!important}.calc-table,.final-results{min-width:860px!important;margin:10px!important}}
+
+/* v46: remove double-seal calculation table stretch gap */
+.design-panel{
+  align-items:start!important;
+}
+.calc-table{
+  align-self:start!important;
+  height:auto!important;
+  min-height:0!important;
+}
+.final-results{
+  align-self:start!important;
+  height:auto!important;
+  min-height:0!important;
+}
+body.double-mode .calc-table{
+  align-self:start!important;
+  height:auto!important;
+  min-height:0!important;
+}
+/* Keep the calculation table only as tall as the actual rows. The right input deck can be taller without stretching the table. */
+.calc-table .r:last-of-type{
+  border-bottom:0!important;
+}
