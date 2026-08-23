@@ -180,8 +180,15 @@ function compoundTraffic({ initialAadt, growthRate, baseYear, laneSplit }) {
 function vehicleFactor(vld, sealType) {
   if (!vld) return 0;
   const st = norm(uiSealTypeToLookupType(sealType));
-  if (st.includes('DOUBLE 1ST')) return round(vld <= 500 ? 0.2359 * Math.pow(vld, -0.084) : 0.2385 * Math.pow(vld, -0.086), 3);
-  return round(vld <= 110 ? 0.388 * Math.pow(110, -0.1304) : vld <= 500 ? 0.388 * Math.pow(vld, -0.1304) : 0.3687 * Math.pow(vld, -0.1226), 3);
+  // All Vf curves are flat below 100 v/l/d (Figures 6.1 and 6.3): the workbook
+  // instead kept rising for double 1st coat and capped single/2nd coat at the
+  // 110 v/l/d value, so design traffic is floored at 100 v/l/d here
+  // (plateaus: double 1st 0.160; single and double 2nd 0.213).
+  const v = Math.max(vld, 100);
+  if (st.includes('DOUBLE 1ST')) {
+    return round(v <= 500 ? 0.2359 * Math.pow(v, -0.084) : 0.2385 * Math.pow(v, -0.086), 3);
+  }
+  return round(v <= 500 ? 0.388 * Math.pow(v, -0.1304) : 0.3687 * Math.pow(v, -0.1226), 3);
 }
 function heavyVehicleGradientCorrection(ehvPct, gradient, braking) {
   const ehv = asNum(ehvPct) / 100;
@@ -495,6 +502,9 @@ function buildDesignNotes(r) {
     notes.push(note('WARNING', coatPrefix + 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
   }
 
+  if (!r.samiMode && r.traffic.vld > 0 && r.traffic.vld < 100) {
+    notes.push(note('APPLIED', coatPrefix + 'Low traffic voids factor plateau', `Design traffic is ${round(r.traffic.vld,0)} v/l/d. The basic voids factor curves are flat below 100 v/l/d, so Vf has been held at the 100 v/l/d value (${round(r.vfRaw,3).toFixed(3)}).`, 'AGPT04K-26 Figures 6.1 / 6.3'));
+  }
   if (r.vt !== 0) {
     notes.push(note('APPLIED', coatPrefix + 'Traffic effects', `Traffic effects adjustment Vt = ${round(r.vt,3)} applied from EHV ${round(r.ehvPct,2)}%, gradient '${r.v.gradient}', and channelised/braking '${r.v.braking}'.`, 'AGPT04K-26 Table 6.2 / traffic effects lookup'));
   }
