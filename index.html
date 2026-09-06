@@ -73,6 +73,11 @@
               <div class="setup-field spec-field"><span>SPEC</span><select name="spec" data-options="spec"></select></div>
               <div class="setup-field"><span>SEAL TYPE</span><select name="sealType" data-options="sealType"></select></div>
               <div class="setup-field wide"><span>TREATMENT</span><select name="treatment" data-options="treatment"></select></div>
+              <div class="setup-field wide"><span>REINFORCEMENT SYSTEM</span><select name="reinforcementSystem">
+                <option>None</option>
+                <option>HUESKER Chipseal Grid A10 / A10 eco</option>
+                <option>HUESKER Chipseal Grid A15 / A15 eco</option>
+              </select></div>
             </div>
 
             <div class="aggregate-dock">
@@ -140,9 +145,21 @@
           </div>
 
           <div class="final-results">
-            <div class="r"><span>Design binder rate</span><b>Bd</b><strong id="finalBinderOut">0.00</strong><strong class="second-val" id="finalBinderOut2">0.00</strong></div>
+            <div class="r bd-row"><span>Design binder rate</span><b>Bd</b><strong id="finalBinderOut">0.00</strong><strong class="second-val" id="finalBinderOut2">0.00</strong></div>
             <div class="r muted-result"><span>Design aggregate spread rate</span><b>m²/m³</b><strong id="aggSpreadBaseOut">0</strong><strong class="second-val" id="aggSpreadBaseOut2">0</strong></div>
             <div class="r"><span>Aggregate application rate</span><b>m²/m³</b><strong id="aggSpreadOut">0</strong><strong class="second-val" id="aggSpreadOut2">0</strong></div>
+          </div>
+
+          <div class="huesker-card" id="hueskerCard">
+            <div class="huesker-head">Chipseal Grid System — Reinforcement Overlay</div>
+            <div class="hr"><span>Product</span><output id="hueskerProductOut">—</output></div>
+            <div class="hr"><span>Sand patch used for bond coat suggestion</span><output id="hueskerSandPatchOut">—</output></div>
+            <div class="hr"><span>Suggested/selected bond coat residual L/m²</span><input name="hueskerBondCoat" type="number" step="0.01" min="0" /></div>
+            <div class="hr"><span>Overall residual target L/m²</span><input name="hueskerOverallTarget" type="number" step="0.01" min="0" /></div>
+            <div class="hr"><span>Grid carry-over adjustment L/m²</span><output id="hueskerCarryOut">—</output></div>
+            <div class="hr"><span>Normal design binder rate L/m²</span><output id="hueskerNormalOut">—</output></div>
+            <div class="hr adjusted"><span>Adjusted design binder rate L/m²</span><output id="hueskerAdjustedOut">—</output></div>
+            <div class="hr" id="hueskerEmulsionRow" hidden><span>Adjusted emulsion spray rate L/m²</span><output id="hueskerEmulsionOut">—</output></div>
           </div>
         </article>
 

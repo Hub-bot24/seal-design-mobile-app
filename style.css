@@ -429,3 +429,28 @@ body{background:radial-gradient(circle at 18% 8%,rgba(41,171,226,.22),transparen
 .calc-table,.final-results,.traffic-card,.year-card,.side-tool,.agg-card,.context-card{box-shadow:0 14px 34px rgba(6,33,58,.10)!important;}
 .final-results strong{letter-spacing:.02em!important;}
 input,select,button{font-family:inherit!important;}
+
+/* v52 — HUESKER Chipseal Grid reinforcement system overlay card */
+/* Card is hidden unless a reinforcement product is selected (body.huesker-mode, mirrors double-mode). */
+.huesker-card{display:none}
+body.huesker-mode .design-panel{grid-template-areas:"title title" "calc setup" "results setup" "huesker setup"}
+body.huesker-mode .huesker-card{display:block;grid-area:huesker;margin:0 0 18px 16px;border:1.5px solid var(--premium-line);border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 18px 42px rgba(6,26,45,.12)}
+.huesker-head{padding:11px 14px;background:linear-gradient(135deg,#041529,#0b5f9f 58%,#14a8e5);color:#fff;font-size:13px;font-weight:950;text-transform:uppercase;letter-spacing:.1em}
+.huesker-card .hr{display:grid;grid-template-columns:1.9fr 1.1fr;min-height:40px;border-bottom:1px solid var(--premium-line)}
+.huesker-card .hr:last-child{border-bottom:0}
+.huesker-card .hr[hidden]{display:none}
+.huesker-card .hr span{display:flex;align-items:center;padding:9px 13px;font-size:14px;font-weight:950;color:#061a2d;background:#e5f1fa;border-right:1px solid var(--premium-line)}
+/* Calculated/readonly values: dark ink, never green. */
+.huesker-card .hr output{display:flex;align-items:center;justify-content:center;min-height:40px;padding:6px 10px;font-size:16px;font-weight:950;color:#061a2d;background:#fff}
+/* Editable/manual values: green and centred, matching the rest of the app. */
+.huesker-card .hr input{width:100%;min-height:40px;border:0;border-radius:0;text-align:center;font-size:17px;font-weight:950;color:var(--premium-green);background:#f2fff7}
+.huesker-card .hr output.warn{background:#fff1f2;color:#b91c1c}
+/* Adjusted design binder rate is the adopted final output when HUESKER is selected. */
+.huesker-card .hr.adjusted span{background:#dff7ea}
+.huesker-card .hr.adjusted output{background:linear-gradient(180deg,#00bd65,#008841);color:#fff;font-size:22px;letter-spacing:.02em}
+.huesker-card .hr.adjusted output.warn{background:linear-gradient(180deg,#d64545,#a51212);color:#fff}
+/* Keep the normal calculated binder rate visible but demote it to the muted calculated style
+   while HUESKER is selected; the double-seal second coat Bd keeps its own final styling. */
+body.huesker-mode .final-results .bd-row strong:not(.second-val){background:linear-gradient(180deg,#eaf8ff,#d9effb)!important;color:#06395f!important;font-size:20px!important}
+@media(max-width:1180px){body.huesker-mode .huesker-card{margin-left:0}}
+@media(max-width:820px){body.huesker-mode .huesker-card{min-width:860px;margin:10px}}
