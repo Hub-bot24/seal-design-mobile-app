@@ -77,6 +77,15 @@
                 <option>None</option>
                 <option>HUESKER Chipseal Grid A10 / A10 eco</option>
                 <option>HUESKER Chipseal Grid A15 / A15 eco</option>
+                <option>GlasGrid / MRTS104 Asphalt Geosynthetic</option>
+              </select></div>
+              <div class="setup-field wide glasgrid-only"><span>GLASGRID PRODUCT TYPE</span><select name="glasgridProduct">
+                <option>Unknown / confirm product</option>
+                <option>GlasGrid GG</option>
+                <option>GlasGrid CGL</option>
+                <option>GlasGrid CG</option>
+                <option>GlasGrid Rapid</option>
+                <option>Other MRTS104 approved asphalt geosynthetic</option>
               </select></div>
             </div>
 
@@ -150,7 +159,7 @@
             <div class="r"><span>Aggregate application rate</span><b>m²/m³</b><strong id="aggSpreadOut">0</strong><strong class="second-val" id="aggSpreadOut2">0</strong></div>
           </div>
 
-          <div class="huesker-card" id="hueskerCard">
+          <div class="overlay-card huesker-card" id="hueskerCard">
             <div class="huesker-head">Chipseal Grid System — Reinforcement Overlay</div>
             <div class="hr"><span>Product</span><output id="hueskerProductOut">—</output></div>
             <div class="hr"><span>Sand patch used for bond coat suggestion</span><output id="hueskerSandPatchOut">—</output></div>
@@ -160,6 +169,24 @@
             <div class="hr"><span>Normal design binder rate L/m²</span><output id="hueskerNormalOut">—</output></div>
             <div class="hr adjusted"><span>Adjusted design binder rate L/m²</span><output id="hueskerAdjustedOut">—</output></div>
             <div class="hr" id="hueskerEmulsionRow" hidden><span>Adjusted emulsion spray rate L/m²</span><output id="hueskerEmulsionOut">—</output></div>
+          </div>
+
+          <div class="overlay-card glasgrid-card" id="glasgridCard">
+            <div class="huesker-head">GlasGrid / MRTS104 — Asphalt Geosynthetic</div>
+            <div class="hr"><span>Product type</span><output id="ggProductOut">—</output></div>
+            <div class="hr msg" id="ggMsgRow"><span>Guidance</span><output id="ggMsgOut">—</output></div>
+            <div class="hr" id="ggSurfaceRow"><span>Existing surface for tack coat</span><select name="glasgridSurface">
+              <option>Sound/new bituminous surface or new seal</option>
+              <option>Old oxidised/hungry bituminous surface</option>
+            </select></div>
+            <div class="hr" id="ggBinderRow"><span>Tack coat binder</span><select name="glasgridBinder">
+              <option>Polymer-modified cationic emulsion (≥65% bitumen)</option>
+              <option>C170 / hot bitumen — project-approved override</option>
+            </select></div>
+            <div class="hr" id="ggRangeRow"><span>Residual tack coat range</span><output id="ggRangeOut">—</output></div>
+            <div class="hr" id="ggResidualRow"><span>Selected residual tack coat kg/m²</span><input name="glasgridResidual" type="number" step="0.01" min="0" /></div>
+            <div class="hr" id="ggSolidsRow"><span>Emulsion solids %</span><input name="glasgridSolids" type="number" step="1" min="1" max="100" value="65" /></div>
+            <div class="hr adjusted" id="ggActualRow"><span>Actual emulsion application rate kg/m²</span><output id="ggActualOut">—</output></div>
           </div>
         </article>
 
