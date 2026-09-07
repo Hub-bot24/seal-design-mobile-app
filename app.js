@@ -1049,12 +1049,51 @@ function buildHueskerNotes(r) {
 // This system is installed UNDER ASPHALT: it produces its own residual bond/tack
 // coat and actual application rate only. It never modifies the sprayed seal binder
 // rate, never uses the HUESKER carry-over logic, and never reuses SAMI/S25E rates.
-// The GlasGrid tack coat surface condition is a separate selection: the existing
-// EXISTING SURFACE dropdown stays reserved for the normal Ast/surface texture logic.
-const GLASGRID_GG_RANGES = {
-  SOUND: { key: 'SOUND', min: 0.20, max: 0.35, suggested: 0.30, label: 'Sound/new bituminous surface or new seal' },
-  OLD: { key: 'OLD', min: 0.35, max: 0.50, suggested: 0.40, label: 'Old oxidised/hungry bituminous surface' },
-  UNKNOWN: { key: 'UNKNOWN', min: null, max: null, suggested: null, label: 'Unknown / confirm with supplier' }
+// The GlasGrid tack coat surface condition is a separate, product-specific selection:
+// the existing EXISTING SURFACE dropdown stays reserved for the normal Ast logic.
+// Every product type carries its own built-in residual range table — GG, CGL, CG and
+// Rapid must never share one generic rate.
+const GLASGRID_PRODUCTS = {
+  UNKNOWN: {
+    surfaces: ['Unknown / confirm with supplier'],
+    ranges: {}
+  },
+  GG: {
+    surfaces: ['Sound/new bituminous surface or new seal', 'Old oxidised/hungry bituminous surface', 'Unknown / confirm with supplier'],
+    ranges: {
+      SOUND: { min: 0.20, max: 0.35, def: 0.30 },
+      OLD: { min: 0.35, max: 0.50, def: 0.40 }
+    }
+  },
+  CGL: {
+    surfaces: ['New surface', 'Current heavily oxidised surface', 'Well milled surface', 'Very poorly milled surface', 'Unknown / confirm with supplier'],
+    ranges: {
+      NEW: { min: 0.50, max: 0.80, def: 0.65 },
+      OXIDISED: { min: 0.70, max: 0.90, def: 0.80 },
+      WELLMILLED: { min: 0.60, max: 1.00, def: 0.80 },
+      POORMILLED: { min: 1.00, max: 1.20, def: 1.10 }
+    }
+  },
+  CG: {
+    surfaces: ['New surface', 'Current heavily oxidised surface', 'Well milled surface', 'Very poorly milled surface', 'Unknown / confirm with supplier'],
+    ranges: {
+      NEW: { min: 1.00, max: 1.20, def: 1.10 },
+      OXIDISED: { min: 1.00, max: 1.20, def: 1.10 },
+      WELLMILLED: { min: 1.20, max: 1.80, def: 1.50 },
+      POORMILLED: { min: 1.80, max: 2.50, def: 2.15 }
+    }
+  },
+  RAPID: {
+    surfaces: ['Standard Rapid installation', 'Project requires bonding spray', 'Installed below wearing course', 'Unknown / confirm with supplier'],
+    ranges: {
+      SPRAY: { min: 0.20, max: 0.35, def: 0.30 },
+      BELOW: { min: 0.20, max: 0.35, def: 0.30 }
+    }
+  },
+  OTHER: {
+    surfaces: ['Unknown / confirm with supplier'],
+    ranges: {}
+  }
 };
 function isGlasgridSystem(selection) {
   const s = norm(selection);
@@ -1070,11 +1109,24 @@ function glasgridProductKey(selection) {
   if (/\bGG\b/.test(s)) return 'GG';
   return 'UNKNOWN';
 }
-function glasgridSurfaceRange(surface) {
+function glasgridSurfaceKey(product, surface) {
   const s = norm(surface);
-  if (s.includes('OLD')) return GLASGRID_GG_RANGES.OLD;
-  if (s.includes('UNKNOWN')) return GLASGRID_GG_RANGES.UNKNOWN;
-  return GLASGRID_GG_RANGES.SOUND;
+  if (s.includes('UNKNOWN')) return 'UNKNOWN';
+  if (product === 'GG') return s.includes('OLD') ? 'OLD' : 'SOUND';
+  if (product === 'CGL' || product === 'CG') {
+    if (s.includes('OXIDISED')) return 'OXIDISED';
+    if (s.includes('WELL MILLED')) return 'WELLMILLED';
+    if (s.includes('POORLY MILLED')) return 'POORMILLED';
+    if (s.includes('NEW')) return 'NEW';
+    return 'UNKNOWN';
+  }
+  if (product === 'RAPID') {
+    if (s.includes('STANDARD')) return 'STANDARD';
+    if (s.includes('BONDING SPRAY')) return 'SPRAY';
+    if (s.includes('WEARING COURSE') || s.includes('BELOW')) return 'BELOW';
+    return 'UNKNOWN';
+  }
+  return 'UNKNOWN';
 }
 function glasgridBinderKey(binder) {
   const b = norm(binder);
@@ -1086,15 +1138,22 @@ function buildGlasgridOverlay(v) {
   if (!isGlasgridSystem(v.reinforcementSystem)) return null;
   const product = glasgridProductKey(v.glasgridProduct);
   const productLabel = String(v.glasgridProduct || 'Unknown / confirm product');
-  const range = glasgridSurfaceRange(v.glasgridSurface);
-  const surfaceUnknown = range.key === 'UNKNOWN';
+  const surfaceLabel = String(v.glasgridSurface || '');
+  const surfaceKey = glasgridSurfaceKey(product, surfaceLabel);
+  // The tack coat surface condition applies to the products with built-in range
+  // tables; Other/Unknown products take a manufacturer/project rate instead.
+  const surfaceApplies = ['GG', 'CGL', 'CG', 'RAPID'].includes(product);
+  const surfaceUnknown = surfaceApplies && surfaceKey === 'UNKNOWN';
+  const rapidStandard = product === 'RAPID' && surfaceKey === 'STANDARD';
+  const range = GLASGRID_PRODUCTS[product].ranges[surfaceKey] || null;
   const binder = glasgridBinderKey(v.glasgridBinder);
   const c170Override = binder === 'C170';
   const residual = hueskerNum(v.glasgridResidual);
   const solids = hueskerNum(v.glasgridSolids);
-  // Unknown product never calculates a final rate. GG is range-driven; CGL/CG/Rapid/Other
-  // only carry a manually entered manufacturer/project rate — never a GG default.
-  const usesRate = product !== 'UNKNOWN';
+  // No actual rate for: unknown product, unknown surface condition, or a standard
+  // Rapid installation (built-in bonding layer, no GG/CGL/CG tack coat applied).
+  const rateBlocked = product === 'UNKNOWN' || surfaceUnknown || rapidStandard;
+  const usesRate = !rateBlocked;
   const usesSolids = usesRate && !c170Override;
   const solidsInvalid = usesSolids && (!Number.isFinite(solids) || solids <= 0 || solids > 100);
   let actualRate = null;
@@ -1105,8 +1164,12 @@ function buildGlasgridOverlay(v) {
   return {
     product,
     productLabel,
-    range,
+    surfaceLabel,
+    surfaceKey,
+    surfaceApplies,
     surfaceUnknown,
+    rapidStandard,
+    range,
     binder,
     c170Override,
     residual,
@@ -1115,58 +1178,65 @@ function buildGlasgridOverlay(v) {
     usesSolids,
     solidsInvalid,
     actualRate,
-    residualOutOfRange: product === 'GG' && !surfaceUnknown && Number.isFinite(residual) && (residual < range.min || residual > range.max),
-    compositeLowRate: (product === 'CGL' || product === 'CG') && Number.isFinite(residual) && residual <= GLASGRID_GG_RANGES.SOUND.max,
-    lowSolids: product === 'GG' && usesSolids && Number.isFinite(solids) && solids > 0 && solids < 65
+    residualOutOfRange: Boolean(range) && Number.isFinite(residual) && (residual < range.min || residual > range.max),
+    lowSolids: usesSolids && Number.isFinite(solids) && solids > 0 && solids < 65
   };
+}
+function glasgridRangeText(g) {
+  if (g.product === 'UNKNOWN') return 'Product required';
+  if (g.range) return `${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)}`;
+  return 'Manufacturer rate required';
 }
 function buildGlasgridNotes(r) {
   const g = r.glasgrid;
   if (!g) return [];
   const notes = [];
   const src = 'MRTS104 / GlasGrid manufacturer guidance';
-  notes.push(note('CHECK', 'MRTS104 ASPHALT GEOSYNTHETIC', 'This system is installed under asphalt. Do not apply HUESKER chipseal carry-over logic. The bond/tack coat below is separate from, and must not be added into, the normal sprayed seal binder rate.', src));
-  notes.push(note('CHECK', 'EXACT GLASGRID PRODUCT REQUIRED', `GlasGrid product type must be confirmed as GG, CGL, CG, Rapid or other before final bond/tack coat rate is selected.${g.product === 'UNKNOWN' ? '' : ` Selected: ${g.productLabel}.`}`, src));
-  notes.push(note('WARNING', 'DO NOT USE ONE GLASGRID RATE', 'GlasGrid GG, CGL, CG and Rapid have different bond/tack coat requirements. Do not apply one generic GlasGrid rate.', src));
 
-  if (g.product === 'UNKNOWN') {
-    notes.push(note('WARNING', 'GLASGRID PRODUCT UNKNOWN', 'Exact GlasGrid product type required before final bond/tack coat rate can be selected. No GlasGrid rate has been calculated.', src));
-    return notes;
+  notes.push(note('APPLIED', 'GLASGRID PRODUCT-SPECIFIC RATE', `The GlasGrid tack/bond coat rate is based on the selected GlasGrid product type and surface condition. GG, CGL, CG and Rapid must not share one generic rate. Selected: ${g.productLabel}${g.surfaceApplies ? `, surface condition '${g.surfaceLabel}'` : ''}${g.range ? `, built-in residual range ${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)} kg/m² (default ${g.range.def.toFixed(2)})` : ''}.`, src));
+  if (g.actualRate !== null && !g.c170Override) {
+    notes.push(note('APPLIED', 'GLASGRID EMULSION CONVERSION', `Actual emulsion application rate is calculated as: Selected residual tack coat × 100 ÷ emulsion solids percentage. ${round(g.residual,2)} × 100 ÷ ${round(g.solids,0)} = ${round(g.actualRate,2)} kg/m².`, src));
   }
+
   if (g.product === 'GG') {
-    if (g.actualRate !== null) {
-      notes.push(note('APPLIED', 'GLASGRID GG TACK COAT', `For GlasGrid GG, tack coat is calculated from the selected residual tack coat and emulsion solids percentage. Self-adhesive asphalt geogrid: tack coat is normally applied over the installed grid before asphalt placement. Residual ${round(g.residual,2)} kg/m²${g.c170Override ? ' with C170/hot bitumen override (no solids conversion)' : ` × 100 ÷ ${round(g.solids,0)}% solids`} = actual application rate ${round(g.actualRate,2)} kg/m².`, src));
-    } else {
-      notes.push(note('WARNING', 'GLASGRID GG TACK COAT', 'GlasGrid GG selected but the residual tack coat and/or emulsion solids inputs are missing or invalid, so no actual application rate has been calculated.', src));
-    }
-    if (g.surfaceUnknown) {
-      notes.push(note('WARNING', 'GLASGRID GG SURFACE CONDITION UNKNOWN', 'Tack coat surface condition is unknown, so no residual tack coat rate has been auto-selected. Confirm the surface condition with the supplier before adopting a rate.', src));
-    }
-    if (g.residualOutOfRange) {
-      notes.push(note('WARNING', 'GLASGRID GG RESIDUAL RANGE', `Selected residual tack coat ${round(g.residual,2)} kg/m² is outside the ${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)} kg/m² range for '${g.range.label}'. Confirm with manufacturer/project before adoption.`, src));
-    }
-    if (g.lowSolids) {
-      notes.push(note('CHECK', 'GLASGRID GG EMULSION SOLIDS', `Emulsion solids ${round(g.solids,0)}% is below the default minimum 65% bitumen content for polymer-modified cationic emulsion. Confirm the product with the supplier/project before adoption.`, src));
-    }
-    if (g.c170Override) {
-      notes.push(note('WARNING', 'C170 OVERRIDE', 'GlasGrid GG manufacturer guidance uses polymer-modified cationic emulsion. C170/hot bitumen must be treated as a project/supplier-approved override, not the default, and must be confirmed by the supplier/project Administrator before use.', src));
-    }
+    notes.push(note('CHECK', 'GLASGRID GG', 'GlasGrid GG is a self-adhesive asphalt geogrid. Tack coat is normally applied over the installed grid before asphalt placement.', src));
   }
-  if (g.product === 'CGL' || g.product === 'CG') {
-    const backing = g.product === 'CGL' ? 'light nonwoven backing' : 'heavier nonwoven backing';
-    notes.push(note('CHECK', `GLASGRID ${g.product} MANUFACTURER RATE`, `GlasGrid ${g.product} is a composite grid with ${backing}; the tack coat is applied under the product before installation. Do not use GlasGrid GG${g.product === 'CG' ? ' or CGL' : ''} rates. Confirm ${g.product} manufacturer residual tack coat rate before finalising.`, src));
-    if (g.compositeLowRate) {
-      notes.push(note('WARNING', `GLASGRID ${g.product} RATE CHECK`, `Entered residual ${round(g.residual,2)} kg/m² is in the low GlasGrid GG range (≤ ${GLASGRID_GG_RANGES.SOUND.max.toFixed(2)} kg/m²). CGL/CG are different products and must not use GlasGrid GG tack coat rates unless supplier confirms.`, src));
-    }
+  if (g.product === 'CGL') {
+    notes.push(note('CHECK', 'GLASGRID CGL', 'GlasGrid CGL is a composite grid with light nonwoven backing. Tack coat is applied before installation and the product is installed nonwoven side down.', src));
+  }
+  if (g.product === 'CG') {
+    notes.push(note('CHECK', 'GLASGRID CG', 'GlasGrid CG is a composite grid with heavier nonwoven backing. Tack coat is applied before installation and the product is installed nonwoven side down.', src));
   }
   if (g.product === 'RAPID') {
-    notes.push(note('CHECK', 'GLASGRID RAPID BONDING', 'GlasGrid Rapid has different bonding requirements / a built-in bonding layer. Do not apply GG, CGL or CG tack coat rates. Confirm Rapid manufacturer bonding requirement before finalising.', src));
+    notes.push(note('CHECK', 'GLASGRID RAPID', 'GlasGrid Rapid has different bonding requirements. Do not apply normal GG/CGL/CG tack coat rates unless project/supplier guidance requires it.', src));
+    if (g.rapidStandard) {
+      notes.push(note('CHECK', 'GLASGRID RAPID STANDARD INSTALLATION', 'Standard Rapid installation selected: no normal GG/CGL/CG tack coat applied and no actual emulsion rate calculated. Confirm the supplier/project requirement.', src));
+    }
+  }
+
+  notes.push(note('WARNING', 'DO NOT USE ONE GLASGRID RATE', 'GlasGrid GG, CGL, CG and Rapid have different bond/tack coat requirements. The exact product must be selected before finalising the rate.', src));
+  notes.push(note('WARNING', 'GLASGRID NOT ADDED TO SEAL BINDER', 'GlasGrid tack/bond coat is not added to the normal sprayed seal binder rate. It is a separate asphalt geosynthetic bond/tack coat under asphalt.', src));
+
+  if (g.product === 'UNKNOWN') {
+    notes.push(note('WARNING', 'GLASGRID PRODUCT UNKNOWN', 'Exact GlasGrid product type required before final bond/tack coat rate can be selected. No actual rate has been calculated.', src));
+  }
+  if (g.surfaceUnknown) {
+    notes.push(note('CHECK', 'GLASGRID SURFACE CONDITION UNKNOWN', 'Tack coat surface condition is unknown, so no residual rate has been auto-selected and no actual rate has been calculated. Confirm the surface condition with the supplier.', src));
   }
   if (g.product === 'OTHER') {
-    notes.push(note('WARNING', 'OTHER MRTS104 GEOSYNTHETIC', `Other MRTS104 approved asphalt geosynthetic selected. ${Number.isFinite(g.residual) ? `Manually entered residual bond/tack coat ${round(g.residual,2)} kg/m² must be confirmed with the supplier and project before adoption.` : 'No bond/tack coat rate has been calculated: enter the manufacturer residual rate manually and confirm it with the supplier and project.'}`, src));
+    notes.push(note('CHECK', 'OTHER MRTS104 GEOSYNTHETIC', `Other MRTS104 approved asphalt geosynthetic selected. ${Number.isFinite(g.residual) ? `Manually entered residual bond/tack coat ${round(g.residual,2)} kg/m² must be confirmed with the supplier and project before adoption.` : 'Enter the manufacturer residual rate manually and confirm it with the supplier and project before adoption.'}`, src));
+  }
+  if (g.residualOutOfRange) {
+    notes.push(note('WARNING', 'GLASGRID RESIDUAL OUT OF RANGE', `Selected residual tack coat ${round(g.residual,2)} kg/m² is outside the manufacturer range ${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)} kg/m² for ${g.productLabel} on '${g.surfaceLabel}'. Confirm with the supplier/project before adoption.`, src));
   }
   if (g.solidsInvalid && Number.isFinite(g.residual)) {
-    notes.push(note('WARNING', 'GLASGRID EMULSION SOLIDS', 'Emulsion solids percentage is missing, zero or invalid (must be between 1 and 100). Actual emulsion application rate cannot be calculated.', src));
+    notes.push(note('WARNING', 'GLASGRID EMULSION SOLIDS', 'Emulsion solids percentage is blank, zero or invalid (must be between 1 and 100). Actual emulsion application rate cannot be calculated.', src));
+  }
+  if (g.lowSolids) {
+    notes.push(note('CHECK', 'GLASGRID EMULSION SOLIDS CONTENT', `Emulsion solids ${round(g.solids,0)}% is below the default 65% bitumen content for polymer-modified cationic emulsion. Confirm the product with the supplier/project before adoption.`, src));
+  }
+  if (g.c170Override) {
+    notes.push(note('WARNING', 'C170 OVERRIDE', 'C170/hot bitumen is not the default GlasGrid tack/bond coat binder. Manufacturer guidance for GlasGrid tack/bond coat is based on emulsion. Use only if confirmed by the supplier/project Administrator before use.', src));
   }
   return notes;
 }
@@ -1315,12 +1385,29 @@ function syncHueskerInputs(e) {
     targetEl.value = product.targetDefault.toFixed(2);
   }
 }
+function updateGlasgridSurfaceOptions(productKey, preferred = null) {
+  const el = $('[name="glasgridSurface"]');
+  if (!el) return;
+  const surfaces = GLASGRID_PRODUCTS[productKey]?.surfaces || GLASGRID_PRODUCTS.UNKNOWN.surfaces;
+  if ([...el.options].map(o => o.value).join('|') !== surfaces.join('|')) {
+    el.innerHTML = surfaces.map(s => `<option>${safe(s)}</option>`).join('');
+  }
+  // Without a preferred value the first (primary) surface is selected — a product
+  // change starts from the new product's own default surface rather than carrying
+  // a selection (such as Unknown) across products.
+  el.value = preferred && surfaces.includes(preferred) ? preferred : surfaces[0];
+}
 function syncGlasgridInputs(e) {
   const name = e?.target?.name;
   if (name === 'glasgridResidual') state.glasgridResidualManual = true;
   if (!isGlasgridSystem($('[name="reinforcementSystem"]')?.value)) return;
   const product = glasgridProductKey($('[name="glasgridProduct"]')?.value);
-  const range = glasgridSurfaceRange($('[name="glasgridSurface"]')?.value);
+  // Each product has its own tack coat surface condition list; swap the options
+  // when the product changes, keeping the selection if it still applies.
+  if (name === 'glasgridProduct') updateGlasgridSurfaceOptions(product);
+  else if (name === 'reinforcementSystem') updateGlasgridSurfaceOptions(product, $('[name="glasgridSurface"]')?.value);
+  const surfaceKey = glasgridSurfaceKey(product, $('[name="glasgridSurface"]')?.value);
+  const range = GLASGRID_PRODUCTS[product].ranges[surfaceKey] || null;
   const residualEl = $('[name="glasgridResidual"]');
   const solidsEl = $('[name="glasgridSolids"]');
   // Default solids to 65% only when the selection changes — refilling on every
@@ -1328,37 +1415,37 @@ function syncGlasgridInputs(e) {
   if (solidsEl && solidsEl.value === '' && (name === 'reinforcementSystem' || name === 'glasgridProduct')) solidsEl.value = '65';
   if (!residualEl) return;
   // A residual rate belongs to one product: changing the product always resets it,
-  // even a manual entry, so a GG rate can never silently carry into CGL/CG/Rapid/Other.
+  // even a manual entry, so one product's rate can never silently carry into another.
   if (name === 'glasgridProduct') state.glasgridResidualManual = false;
   if (state.glasgridResidualManual) return;
   const selectionEvent = name === 'reinforcementSystem' || name === 'glasgridProduct' || name === 'glasgridSurface';
-  if (product === 'GG') {
-    // GG is range-driven: suggest the surface-based residual until the designer
-    // overrides it. An unknown surface condition never auto-selects a rate.
-    if (selectionEvent || residualEl.value === '') {
-      residualEl.value = range.suggested !== null ? range.suggested.toFixed(2) : '';
-    }
-  } else if (selectionEvent) {
-    // CGL/CG/Rapid/Other/Unknown take a manufacturer/project rate: never carry a GG suggestion across.
-    residualEl.value = '';
+  if (selectionEvent || residualEl.value === '') {
+    // Built-in product/surface default where one exists; otherwise leave blank
+    // (unknown product/surface, standard Rapid, Other manufacturer rate).
+    residualEl.value = range ? range.def.toFixed(2) : '';
   }
 }
 function initGlasgridDefaults() {
   const productSel = $('[name="glasgridProduct"]');
   const binderSel = $('[name="glasgridBinder"]');
-  const surfaceSel = $('[name="glasgridSurface"]');
   // A restored value that no longer matches an option leaves the select blank; snap to the first option.
-  [productSel, binderSel, surfaceSel].forEach(el => { if (el && el.value === '' && el.options.length) el.selectedIndex = 0; });
+  [productSel, binderSel].forEach(el => { if (el && el.value === '' && el.options.length) el.selectedIndex = 0; });
   if (!isGlasgridSystem($('[name="reinforcementSystem"]')?.value)) return;
   const product = glasgridProductKey(productSel?.value);
-  const range = glasgridSurfaceRange(surfaceSel?.value);
+  // Restore may have failed to apply the saved surface (its option only exists after
+  // the product-specific list is built), so re-read it from storage here.
+  let savedSurface = null;
+  try { savedSurface = JSON.parse(storage.get('seal-design-form') || '{}').glasgridSurface || null; } catch (_) { /* ignore */ }
+  updateGlasgridSurfaceOptions(product, savedSurface);
+  const surfaceKey = glasgridSurfaceKey(product, $('[name="glasgridSurface"]')?.value);
+  const range = GLASGRID_PRODUCTS[product].ranges[surfaceKey] || null;
   const residualEl = $('[name="glasgridResidual"]');
   const solidsEl = $('[name="glasgridSolids"]');
   if (solidsEl && solidsEl.value === '') solidsEl.value = '65';
   if (!residualEl) return;
-  if (product === 'GG' && range.suggested !== null) {
-    if (residualEl.value === '') residualEl.value = range.suggested.toFixed(2);
-    else if (Math.abs(asNum(residualEl.value, NaN) - range.suggested) > 1e-9) state.glasgridResidualManual = true;
+  if (range) {
+    if (residualEl.value === '') residualEl.value = range.def.toFixed(2);
+    else if (Math.abs(asNum(residualEl.value, NaN) - range.def) > 1e-9) state.glasgridResidualManual = true;
   } else if (residualEl.value !== '') {
     state.glasgridResidualManual = true;
   }
@@ -1473,24 +1560,31 @@ function render(e) {
   if (g) {
     const messages = {
       UNKNOWN: 'Exact GlasGrid product type must be confirmed before final bond/tack coat rate is selected. No rate is calculated for Unknown.',
-      GG: 'GlasGrid GG: self-adhesive asphalt geogrid. Tack coat is normally applied over the installed grid before asphalt placement. Default binder: polymer-modified cationic emulsion, minimum 65% bitumen content.',
-      CGL: 'GlasGrid CGL: composite grid with light nonwoven backing; tack coat is applied under the product before installation. Do not use GlasGrid GG rates. Confirm CGL manufacturer residual tack coat rate before finalising.',
-      CG: 'GlasGrid CG: composite grid with heavier nonwoven backing; tack coat is applied under the product before installation. Do not use GG or CGL rates. Confirm CG manufacturer residual tack coat rate before finalising.',
-      RAPID: 'GlasGrid Rapid: different bonding requirements / built-in bonding layer. Do not apply GG, CGL or CG tack coat rates. Confirm Rapid manufacturer bonding requirement before finalising.',
+      GG: 'GlasGrid GG: self-adhesive asphalt geogrid. Tack coat is normally applied over the installed GlasGrid GG before asphalt placement. Default binder: polymer-modified cationic emulsion, minimum 65% bitumen content.',
+      CGL: 'GlasGrid CGL: composite grid with light nonwoven backing. Tack coat is applied before installation; CGL is installed into the tack coat with nonwoven side down.',
+      CG: 'GlasGrid CG: composite grid with heavier nonwoven backing. Tack coat is applied before installation; CG is installed into the tack coat with nonwoven side down.',
+      RAPID: 'GlasGrid Rapid: rapid / built-in bonding system. Do not apply normal GG/CGL/CG tack coat rates unless project/supplier guidance requires a bonding spray.',
       OTHER: 'Other MRTS104 approved asphalt geosynthetic: enter the manufacturer residual bond/tack coat rate manually and confirm with supplier and project before adoption.'
     };
     let msg = messages[g.product] || messages.UNKNOWN;
-    if (g.product === 'GG' && g.surfaceUnknown) msg += ' Surface condition unknown — confirm with supplier; no rate auto-selected.';
+    if (g.surfaceUnknown) msg += ' Surface condition unknown — confirm with supplier; no rate auto-selected or calculated.';
+    if (g.rapidStandard) msg += ' Standard Rapid installation: no normal GG/CGL/CG tack coat applied. Confirm supplier/project requirement.';
+    if (g.range) msg += ` Built-in residual range for this surface: ${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)} kg/m² (default ${g.range.def.toFixed(2)}).`;
     setText('ggMsgOut', msg);
-    setText('ggRangeOut', g.product === 'GG'
-      ? (g.surfaceUnknown ? 'Confirm with supplier' : `${g.range.min.toFixed(2)}–${g.range.max.toFixed(2)}`)
-      : 'Manufacturer rate');
+    setText('ggRangeOut', glasgridRangeText(g));
     const solidsRow = document.getElementById('ggSolidsRow');
-    if (solidsRow) solidsRow.hidden = !g.usesSolids;
-    const noRate = g.actualRate === null;
-    setText('ggActualOut', noRate ? (g.product === 'UNKNOWN' ? 'CONFIRM' : 'CHECK') : round(g.actualRate,2).toFixed(2));
-    document.getElementById('ggActualOut')?.classList.toggle('warn', noRate);
-    $('[name="glasgridResidual"]')?.classList.toggle('warn', g.residualOutOfRange || g.compositeLowRate);
+    // The solids row stays visible in every state except the C170/hot bitumen
+    // override (which needs no emulsion conversion) — the card always shows its
+    // full field set even while no rate is being calculated.
+    if (solidsRow) solidsRow.hidden = g.c170Override;
+    const actualText = g.rapidStandard ? 'N/A'
+      : g.product === 'UNKNOWN' || g.surfaceUnknown ? 'CHECK'
+      : g.actualRate !== null ? round(g.actualRate,2).toFixed(2)
+      : g.product === 'OTHER' && !Number.isFinite(g.residual) ? '—'
+      : 'CHECK';
+    setText('ggActualOut', actualText);
+    document.getElementById('ggActualOut')?.classList.toggle('warn', actualText === 'CHECK');
+    $('[name="glasgridResidual"]')?.classList.toggle('warn', g.residualOutOfRange);
     $('[name="glasgridSolids"]')?.classList.toggle('warn', (g.solidsInvalid && Number.isFinite(g.residual)) || g.lowSolids);
   }
   $('#flagsList').innerHTML = r.notes.map(renderNoteCard).join('');
@@ -1531,13 +1625,12 @@ Adjusted emulsion spray rate: ${round(r.huesker.adjustedEmulsionRate,2)} L/m² a
 
 Reinforcement system — GlasGrid / MRTS104 asphalt geosynthetic (under asphalt — separate from seal binder rate):
 Product type: ${r.glasgrid.productLabel}
-Bond/tack coat binder: ${r.glasgrid.c170Override ? 'C170 / hot bitumen override (project-approved)' : r.glasgrid.binder === 'OTHER' ? 'Other / project specified' : 'Polymer-modified cationic emulsion'}${r.glasgrid.product === 'GG' ? `
-Tack coat surface condition: ${r.glasgrid.range.label}
-Residual tack coat range: ${r.glasgrid.surfaceUnknown ? 'confirm with supplier' : `${r.glasgrid.range.min.toFixed(2)}–${r.glasgrid.range.max.toFixed(2)} kg/m²`}` : ''}${r.glasgrid.usesRate ? `
+Bond/tack coat binder: ${r.glasgrid.c170Override ? 'C170 / hot bitumen override (project-approved)' : r.glasgrid.binder === 'OTHER' ? 'Other / project specified' : 'Polymer-modified cationic emulsion'}${r.glasgrid.surfaceApplies ? `
+Tack coat surface condition: ${r.glasgrid.surfaceLabel}` : ''}
+Residual range: ${glasgridRangeText(r.glasgrid)}${r.glasgrid.range ? ' kg/m²' : ''}
 Selected residual tack coat: ${Number.isFinite(r.glasgrid.residual) ? `${round(r.glasgrid.residual,2)} kg/m²` : 'not entered'}${r.glasgrid.usesSolids ? `
 Emulsion solids: ${Number.isFinite(r.glasgrid.solids) ? `${round(r.glasgrid.solids,0)}%` : 'not entered'}` : ''}
-Actual emulsion application rate: ${r.glasgrid.actualRate !== null ? `${round(r.glasgrid.actualRate,2)} kg/m²` : 'not calculated — confirm product/manufacturer rate'}` : `
-No bond/tack coat rate calculated: exact GlasGrid product type must be confirmed first.`}` : '';
+Actual emulsion application rate: ${r.glasgrid.rapidStandard ? 'N/A — standard Rapid installation, no GG/CGL/CG tack coat applied' : r.glasgrid.actualRate !== null ? `${round(r.glasgrid.actualRate,2)} kg/m²` : 'not calculated — confirm product/surface/manufacturer rate'}` : '';
   const text = `Spray seal design summary
 Project: ${r.v.projectName}
 Road: ${r.v.roadName}
