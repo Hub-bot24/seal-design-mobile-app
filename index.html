@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1f4e79" />
   <title>Spray Seal Design Calculation</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=54" />
 </head>
 <body>
   <header class="app-header no-print">
@@ -82,6 +82,10 @@
                 <option>HUESKER Chipseal Grid A10 / A10 eco</option>
                 <option>HUESKER Chipseal Grid A15 / A15 eco</option>
                 <option>GlasGrid / MRTS104 Asphalt Geosynthetic</option>
+              </select></label>
+              <label class="rf-huesker"><span>BOND COAT MODE</span><select name="hueskerBondMode">
+                <option>Auto from texture</option>
+                <option>Manual override</option>
               </select></label>
               <label class="rf-huesker"><span>BOND COAT RESIDUAL L/m²</span><input name="hueskerBondCoat" type="number" step="0.01" min="0" /></label>
               <label class="rf-huesker"><span>OVERALL RESIDUAL TARGET L/m²</span><input name="hueskerOverallTarget" type="number" step="0.01" min="0" /></label>
@@ -216,6 +220,6 @@
   </main>
 
   <footer class="no-print">Spray Seal Design Calculator · Calculation + Lookups conversion · Validate against Excel before real design use.</footer>
-  <script src="app.js" type="module"></script>
+  <script src="app.js?v=54" type="module"></script>
 </body>
 </html>

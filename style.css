@@ -457,3 +457,6 @@ body.glasgrid-mode .glasgrid-panel{display:block}
    double-seal second coat Bd keeps its own final styling. GlasGrid is a tack coat under
    asphalt: it does NOT modify the seal binder rate, so no demotion in glasgrid mode. */
 body.huesker-mode .final-results .bd-row strong:not(.second-val){background:linear-gradient(180deg,#eaf8ff,#d9effb)!important;color:#06395f!important;font-size:20px!important}
+
+/* v54 — HUESKER bond coat mode: auto-from-texture values are calculated (dark, locked), manual stays green. */
+.reinforcement-card input[readonly]{color:#061a2d!important;background:#fff!important;cursor:default}
