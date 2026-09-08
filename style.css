@@ -460,3 +460,11 @@ body.huesker-mode .final-results .bd-row strong:not(.second-val){background:line
 
 /* v54 — HUESKER bond coat mode: auto-from-texture values are calculated (dark, locked), manual stays green. */
 .reinforcement-card input[readonly]{color:#061a2d!important;background:#fff!important;cursor:default}
+
+/* v56 — HUESKER integrates into the main output: Bd-before is demoted, and the
+   carry-over + final adjusted rows appear in the main final results table.
+   These rows exist only for HUESKER; GlasGrid never touches the main output. */
+.huesker-final-row{display:none!important}
+body.huesker-mode .huesker-final-row{display:grid!important}
+body.huesker-mode .huesker-final-row.carry-row strong:not(.second-val){background:linear-gradient(180deg,#eaf8ff,#d9effb)!important;color:#06395f!important;font-size:18px!important}
+body.huesker-mode .huesker-final-row .second-val{background:#f4f9fd!important;color:#64748b!important;font-size:14px!important}
