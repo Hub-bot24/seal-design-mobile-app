@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1f4e79" />
   <title>Spray Seal Design Calculation</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=56" />
+  <link rel="stylesheet" href="style.css?v=57" />
 </head>
 <body>
   <header class="app-header no-print">
@@ -81,6 +81,7 @@
                 <option>None</option>
                 <option>HUESKER Chipseal Grid A10 / A10 eco</option>
                 <option>HUESKER Chipseal Grid A15 / A15 eco</option>
+                <option>HUESKER HaTelit C Asphalt Reinforcement</option>
                 <option>GlasGrid / MRTS104 Asphalt Geosynthetic</option>
               </select></label>
               <label class="rf-huesker"><span>BOND COAT MODE</span><select name="hueskerBondMode">
@@ -98,6 +99,27 @@
               <label class="rf-huesker"><span>GRID CARRY-OVER L/m²</span><output id="hueskerCarryOut">—</output></label>
               <label class="rf-huesker final-cell"><span>ADJUSTED DESIGN BINDER L/m²</span><output id="hueskerAdjustedOut">—</output></label>
               <label class="rf-huesker" id="hueskerEmulsionRow" hidden><span>ADJUSTED EMULSION SPRAY L/m²</span><output id="hueskerEmulsionOut">—</output></label>
+            </div>
+
+            <div class="context-card reinforcement-card hatelit-panel" id="hatelitCard">
+              <div class="context-title">HaTelit C Asphalt Reinforcement</div>
+              <label><span>TACK COAT BINDER</span><select name="hatelitBinder">
+                <option>Hot bitumen</option>
+                <option>Bitumen emulsion</option>
+                <option>Other / project specified</option>
+              </select></label>
+              <label><span>SURFACE CONDITION</span><select name="hatelitSurface">
+                <option>Brand new warm asphalt surface</option>
+                <option>Asphalt surface not cold planed</option>
+                <option>Cold planed asphalt surface</option>
+                <option>Excessively coarse cold planed surface</option>
+                <option>Unknown / confirm</option>
+              </select></label>
+              <label><span>RESIDUAL TACK COAT RANGE L/m²</span><output id="hatelitRangeOut">—</output></label>
+              <label><span>SELECTED RESIDUAL TACK COAT L/m²</span><input name="hatelitResidual" type="number" step="0.01" min="0" /></label>
+              <label id="hatelitContentRow"><span>EMULSION BITUMEN CONTENT %</span><input name="hatelitContent" type="number" step="1" min="1" max="100" value="65" /></label>
+              <label class="final-cell"><span>ACTUAL EMULSION SPRAY RATE L/m²</span><output id="hatelitActualOut">—</output></label>
+              <div class="rf-guidance" id="hatelitMsgOut">—</div>
             </div>
 
             <div class="context-card reinforcement-card glasgrid-panel" id="glasgridCard">
@@ -228,6 +250,6 @@
   </main>
 
   <footer class="no-print">Spray Seal Design Calculator · Calculation + Lookups conversion · Validate against Excel before real design use.</footer>
-  <script src="app.js?v=56" type="module"></script>
+  <script src="app.js?v=57" type="module"></script>
 </body>
 </html>
