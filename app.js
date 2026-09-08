@@ -455,6 +455,18 @@ function tn175BinderFactorFallback(sealType, treatment, binder) {
 
   return null;
 }
+// TN175 Table Q6.4 states the SAMI binder factor as a band (1.3–1.5), not a single
+// value, so the adopted factor is a project decision. The app shows the resulting
+// binder-rate range and lets the designer adopt a factor within the band.
+// AGPT04K-26 is unaffected: it has its own single SAMI factor.
+const TN175_SAMI_BF_BAND = { min: 1.3, max: 1.5 };
+function tn175SamiBfBand(spec, treatment, binder) {
+  if (!isTn175(spec)) return null;
+  const tr = norm(treatment);
+  const b = norm(binder);
+  if (!(tr.includes('SAMI') || tr.includes('INTERLAYER'))) return null;
+  return ['S25E', 'S18RF'].includes(b) ? TN175_SAMI_BF_BAND : null;
+}
 function tn175BinderFactorSource(sealType) {
   return isDoubleFirst(sealType) ? 'TN175 Table Q6.5' : 'TN175 Table Q6.4';
 }
@@ -492,8 +504,16 @@ function buildDesignNotes(r) {
     if (tr.includes('MODIFIED EMULSION') && !tr.includes('UNMODIFIED')) {
       notes.push(note('CHECK', coatPrefix + 'TN175 modified emulsion seal binder factor', 'TN175 Table Q6.4 says a modified emulsion seal uses the binder factor of the PMB that has been emulsified. The base PMB binder factor has been applied (S10E/S35E/S9R/S9RF = 1.0; S15E/S15R/S15RF/S20E = 1.11). If this seal is a SAM, SAMI or WP-A built with an emulsified PMB, select that treatment instead so the correct higher binder factor applies.', 'TN175 Table Q6.4'));
     }
-    if ((tr.includes('SAMI') || tr.includes('INTERLAYER')) && (b === 'S25E' || b === 'S18RF')) {
-      notes.push(note('CHECK', coatPrefix + 'SAMI binder factor range', 'TN175 lists SAMI binder factor as 1.3–1.5 for S25E/S18RF. The app uses the lower end (1.3) until the project-specific adopted factor is confirmed.', 'TN175 Table Q6.4'));
+    if (r.samiBfBand) {
+      const band = `${r.samiBfBand.min.toFixed(2)}–${r.samiBfBand.max.toFixed(2)}`;
+      const rangeText = r.samiBandRates ? ` At the entered inputs that band gives a design binder rate range of ${round(r.samiBandRates.min,2).toFixed(2)}–${round(r.samiBandRates.max,2).toFixed(2)} L/m².` : '';
+      notes.push(note('APPLIED', coatPrefix + 'TN175 SAMI binder factor band', `TN175 Table Q6.4 gives the SAMI binder factor as a band of ${band} for ${r.v.binder}, not a single value. Adopted binder factor: ${round(r.bf,2)}.${rangeText} The adopted factor is a project decision and must be confirmed with the Administrator.`, 'TN175 Table Q6.4'));
+      if (r.samiBfAtBandMin) {
+        notes.push(note('CHECK', coatPrefix + 'TN175 SAMI adopted binder factor', `The adopted SAMI binder factor is at the bottom of the band (${r.samiBfBand.min.toFixed(2)}), which is the leanest binder rate TN175 allows for a SAMI. Confirm the project-adopted factor with the Administrator: a SAMI relies on adequate binder for crack relief and waterproofing, and TN175 puts typical SAMI rates at 2.0–2.5 L/m².`, 'TN175 Table Q6.4'));
+      }
+      if (r.samiBfOutOfBand) {
+        notes.push(note('WARNING', coatPrefix + 'TN175 SAMI binder factor out of band', `Adopted SAMI binder factor ${round(r.bf,2)} is outside the TN175 band of ${band}. Do not adopt a factor outside the band without documented Administrator approval.`, 'TN175 Table Q6.4'));
+      }
     }
     if (!isSecondCoat && r.ehvPct >= 25) {
       notes.push(note('CHECK', 'TN175 binder factor reduction review', 'High heavy-vehicle percentage detected. TN175 notes binder factors may be reduced by 0.1 in high stress / very heavy traffic conditions, but must not be reduced below 1.0. Apply only by designer judgement, not automatically.', isDoubleFirst(r.v.sealType) ? 'TN175 Table Q6.5 Note 1' : 'TN175 Table Q6.4 Note 1'));
@@ -1414,7 +1434,20 @@ function calculateCoat(v) {
   const vfRaw = vehicleFactor(traffic.vld, v.sealType);
   const vtRaw = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
   const shapeRaw = aggregateShapeAdjustment(v.flIndex);
-  const bf = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
+  const bfRaw = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
+  // TN175 SAMI band: the adopted factor drives the design binder rate; a blank or
+  // invalid entry falls back to the bottom of the band so nothing is silently raised.
+  const samiBfBand = tn175SamiBfBand(v.spec, v.treatment, v.binder);
+  const adoptedSamiBfRaw = samiBfBand ? hueskerNum(v.samiAdoptedBf) : NaN;
+  const adoptedSamiBfValid = Number.isFinite(adoptedSamiBfRaw) && adoptedSamiBfRaw > 0;
+  const adoptedSamiBf = samiBfBand ? (adoptedSamiBfValid ? adoptedSamiBfRaw : samiBfBand.min) : null;
+  // The field is seeded with the band minimum, so "missing" is not a useful state.
+  // What matters is whether the designer has consciously moved off the lean bottom
+  // of the band — that stays flagged until they adopt a value.
+  const samiBfAtBandMin = Boolean(samiBfBand) && Math.abs(adoptedSamiBf - samiBfBand.min) < 1e-9;
+  const samiBfOutOfBand = Boolean(samiBfBand) && adoptedSamiBfValid
+    && (adoptedSamiBfRaw < samiBfBand.min || adoptedSamiBfRaw > samiBfBand.max);
+  const bf = samiBfBand ? adoptedSamiBf : bfRaw;
   // HUESKER critical texture rule: when a HUESKER product is selected the entered
   // texture/sand patch drives the HUESKER bond coat instead, so the normal Ast
   // surface texture allowance is NOT applied (Ast row shows N/A) — the same
@@ -1436,11 +1469,20 @@ function calculateCoat(v) {
   const ap = allowanceNum(v.ap);
   const ae = embedmentAllowance(traffic.vld, v.ballpin, v.spec);
   const binderBeforeRounding = modifiedBinder + ar.numeric + aba + ap + ae.numeric;
+  const rateAtFactor = (factor) => {
+    const raw = (baseBinder * factor) + ar.numeric + aba + ap + ae.numeric;
+    return samiMode ? round(Math.round(raw * 10) / 10, 1) : raw;
+  };
   const finalBinder = samiMode ? round(Math.round(binderBeforeRounding * 10) / 10, 1) : binderBeforeRounding;
+  // Binder-rate envelope for the TN175 SAMI band, presented the same way as the
+  // aggregate spread rate range.
+  const samiBandRates = samiBfBand
+    ? { min: rateAtFactor(samiBfBand.min), max: rateAtFactor(samiBfBand.max) }
+    : null;
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
   const emulsionContent = emulsionBinderContent(v.binder);
   const emulsionSprayRate = emulsionContent ? finalBinder / emulsionContent : null;
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, emulsionContent, emulsionSprayRate, agg, notes: [] };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, bfRaw, samiBfBand, adoptedSamiBf, samiBfAtBandMin, samiBfOutOfBand, samiBandRates, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, emulsionContent, emulsionSprayRate, agg, notes: [] };
 }
 function calculate() {
   const v = formValues();
@@ -1659,6 +1701,14 @@ function initHatelitDefaults() {
     state.hatelitResidualManual = true;
   }
 }
+function syncSamiBfInput() {
+  const el = $('[name="samiAdoptedBf"]');
+  if (!el) return;
+  const band = tn175SamiBfBand($('[name="spec"]')?.value, $('[name="treatment"]')?.value, $('[name="binder"]')?.value);
+  // Seed the bottom of the band the first time the field becomes relevant; never
+  // overwrite a value the designer has adopted.
+  if (band && el.value === '') el.value = band.min.toFixed(2);
+}
 function initHueskerDefaults() {
   const modeEl = $('[name="hueskerBondMode"]');
   const bondBinderEl = $('[name="hueskerBondBinder"]');
@@ -1694,6 +1744,7 @@ function render(e) {
   syncHueskerInputs(e);
   syncGlasgridInputs(e);
   syncHatelitInputs(e);
+  syncSamiBfInput();
 
   const r = calculate();
   const doubleMode = Boolean(r.second);
@@ -1730,6 +1781,12 @@ function render(e) {
   setText('abaOut', round(r.aba,2));
   setText('apOut', round(r.ap,2));
   setText('embedOut', r.ae.display || round(r.ae.numeric,2));
+  // TN175 SAMI band: show the binder-rate envelope beside the adopted rate, in the
+  // same muted style the aggregate spread rate range uses.
+  document.body.classList.toggle('sami-band-mode', Boolean(r.samiBfBand));
+  setText('samiBandRangeOut', r.samiBandRates ? `${round(r.samiBandRates.min,2).toFixed(2)}–${round(r.samiBandRates.max,2).toFixed(2)}` : '—');
+  setText('samiBandLabel', r.samiBfBand ? `Design binder rate range (BF ${r.samiBfBand.min.toFixed(2)}–${r.samiBfBand.max.toFixed(2)})` : 'Design binder rate range');
+  $('[name="samiAdoptedBf"]')?.classList.toggle('warn', Boolean(r.samiBfOutOfBand));
   setText('finalBinderOut', round(r.finalBinder,2).toFixed(2));
   const aggDisplay = ensureAggregateSpreadResult(r.v, r.agg);
   setText('aggSpreadBaseOut', aggDisplayBaseCell(aggDisplay));
@@ -1750,6 +1807,8 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
+  setText('samiBandRangeOut2', s2 && s2.samiBandRates ? `${round(s2.samiBandRates.min,2).toFixed(2)}–${round(s2.samiBandRates.max,2).toFixed(2)}` : (s2 ? 'N/A' : ''));
+  setText('samiAdoptedBfOut2', s2 ? (s2.samiBfBand ? round(s2.bf,2).toFixed(2) : 'N/A') : '');
   const aggDisplay2 = s2 ? ensureAggregateSpreadResult(s2.v, s2.agg) : null;
   setText('aggSpreadBaseOut2', s2 ? aggDisplayBaseCell(aggDisplay2) : '');
   setText('aggSpreadOut2', s2 ? aggDisplayRateCell(aggDisplay2) : '');
@@ -1894,6 +1953,7 @@ Client AADT: ${r.v.initialAadt}
 Design AADT: ${round(r.traffic.aadt,0)}
 v/l/d: ${round(r.traffic.vld,0)}
 Binder: ${round(r.finalBinder,2)} L/m²
+SAMI binder factor: ${r.samiBfBand ? `adopted ${round(r.bf,2)} within TN175 band ${r.samiBfBand.min.toFixed(2)}–${r.samiBfBand.max.toFixed(2)}; binder rate range ${round(r.samiBandRates.min,2)}–${round(r.samiBandRates.max,2)} L/m²` : 'n/a'}
 Adjustments: ${r.samiMode ? 'Waterproofing/SAMI/WPA fixed VF 0.17; normal Va/Vt/Other not applied' : `Va ${round(r.shape.va,3)} + Vt ${round(r.vt,3)} + Other ${round(r.otherAdjustment,3)}`}
 Allowances: Ast ${r.ar.display === 'N/A' ? 'N/A' : round(r.ar.numeric,2)} + Aba ${round(r.aba,2)} + Ap ${round(r.ap,2)} + Ae ${r.ae.display ?? round(r.ae.numeric,2)} L/m²
 Design aggregate spread base: ${cleanAggregateBaseDisplay(r.agg.displayBase || round(r.agg.base,0))} m²/m³
@@ -1924,6 +1984,7 @@ async function init() {
   initHueskerDefaults();
   initGlasgridDefaults();
   initHatelitDefaults();
+  syncSamiBfInput();
   updateTreatmentAndBinderOptions();
   $('#designForm').addEventListener('input', render);
   $('#copyBtn').addEventListener('click', copySummary);

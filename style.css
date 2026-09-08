@@ -472,3 +472,10 @@ body.huesker-mode .huesker-final-row .second-val{background:#f4f9fd!important;co
 /* v57 — HaTelit C asphalt reinforcement card (tack coat only; never touches Bd or Ast). */
 .hatelit-panel{display:none}
 body.hatelit-mode .hatelit-panel{display:block}
+
+/* v59 — TN175 SAMI binder factor band: an adopted-factor input in the calculation
+   table and a muted binder-rate range row, mirroring the aggregate spread rate pair.
+   Both appear only when the TN175 SAMI band applies; 4K SAMI is a single factor. */
+.sami-bf-row,.sami-band-row{display:none!important}
+body.sami-band-mode .sami-bf-row,body.sami-band-mode .sami-band-row{display:grid!important}
+.calc-table input[name="samiAdoptedBf"].warn{background:#fff1f2!important;color:#b91c1c!important}

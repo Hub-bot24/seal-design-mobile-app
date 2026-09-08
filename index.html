@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1f4e79" />
   <title>Spray Seal Design Calculation</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=58" />
+  <link rel="stylesheet" href="style.css?v=59" />
 </head>
 <body>
   <header class="app-header no-print">
@@ -205,6 +205,7 @@
             <div class="r"><span>ALD of aggregate</span><b>ALD mm</b><output id="aldCalcOut">0.0</output><output class="second-val" id="aldCalcOut2">0.0</output></div>
             <div class="r"><span>Basic binder rate</span><b>Bb L/m²</b><output id="baseBinderOut">0.00</output><output class="second-val" id="baseBinderOut2">0.00</output></div>
             <div class="r"><span>Binder factor</span><b>BF</b><output id="bfOut">0.0</output><output class="second-val" id="bfOut2">0.0</output></div>
+            <div class="r input-r sami-bf-row"><span>Adopted SAMI binder factor</span><b>BF 1.30–1.50</b><div class="value-cell"><input name="samiAdoptedBf" type="number" step="0.01" min="0" /></div><output class="second-val" id="samiAdoptedBfOut2">N/A</output></div>
             <div class="r"><span>Modified binder rate</span><b>Bbm L/m²</b><output id="modifiedBinderOut">0.00</output><output class="second-val" id="modifiedBinderOut2">0.00</output></div>
             <div class="section-title">Allowances:</div>
             <div class="r"><span>Surface texture / sand patch</span><b>Ast L/m²</b><output id="astOut">0.00</output><output class="second-val" id="astOut2">0.00</output></div>
@@ -214,6 +215,7 @@
           </div>
 
           <div class="final-results">
+            <div class="r muted-result sami-band-row"><span id="samiBandLabel">Design binder rate range</span><b>L/m²</b><strong id="samiBandRangeOut">—</strong><strong class="second-val" id="samiBandRangeOut2">N/A</strong></div>
             <div class="r bd-row"><span id="bdRowLabel">Design binder rate</span><b id="bdRowSym">Bd</b><strong id="finalBinderOut">0.00</strong><strong class="second-val" id="finalBinderOut2">0.00</strong></div>
             <div class="r huesker-final-row carry-row"><span>HUESKER grid carry-over adjustment</span><b>+</b><strong id="hueskerCarryMainOut">0.00</strong><strong class="second-val" id="hueskerCarryMainOut2">—</strong></div>
             <div class="r huesker-final-row"><span>Final adjusted design binder rate</span><b>Bd final</b><strong id="hueskerFinalMainOut">0.00</strong><strong class="second-val" id="hueskerFinalMainOut2">—</strong></div>
@@ -250,6 +252,6 @@
   </main>
 
   <footer class="no-print">Spray Seal Design Calculator · Calculation + Lookups conversion · Validate against Excel before real design use.</footer>
-  <script src="app.js?v=58" type="module"></script>
+  <script src="app.js?v=59" type="module"></script>
 </body>
 </html>
