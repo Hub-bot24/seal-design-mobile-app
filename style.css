@@ -479,3 +479,15 @@ body.hatelit-mode .hatelit-panel{display:block}
 .sami-bf-row,.sami-band-row{display:none!important}
 body.sami-band-mode .sami-bf-row,body.sami-band-mode .sami-band-row{display:grid!important}
 .calc-table input[name="samiAdoptedBf"].warn{background:#fff1f2!important;color:#b91c1c!important}
+
+/* v61 — the right-hand setup rail is taller than the calculation table plus the
+   final results, so the spare grid height was being split between those two rows
+   and left a large gap between them. Send the slack to a trailing filler row
+   instead, so the final design output sits directly under the calculation table.
+   Desktop two-column panel only; the stacked layout below 1181px is untouched. */
+@media (min-width:1181px){
+  .design-panel{
+    grid-template-areas:"title title" "calc setup" "results setup" ". setup" !important;
+    grid-template-rows:auto auto auto 1fr !important;
+  }
+}

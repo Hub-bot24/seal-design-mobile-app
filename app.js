@@ -1815,6 +1815,12 @@ function render(e) {
   setText('apOut2', s2 ? 'N/A' : '');
   setText('embedOut2', s2 ? 'N/A' : '');
   setText('finalBinderOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '');
+  // The HUESKER bond coat and carry-over belong to the first application only, so
+  // those second-coat cells stay N/A; the final row simply repeats the unchanged
+  // second-coat binder. No second-coat value is recalculated here.
+  setText('hueskerBondMainOut2', s2 ? '—' : '—');
+  setText('hueskerCarryMainOut2', s2 ? '—' : '—');
+  setText('hueskerFinalMainOut2', s2 ? round(s2.finalBinder,2).toFixed(2) : '—');
   setText('samiBandRangeOut2', s2 && s2.samiBandRates ? `${round(s2.samiBandRates.min,2).toFixed(2)}–${round(s2.samiBandRates.max,2).toFixed(2)}` : (s2 ? 'N/A' : ''));
   setText('samiAdoptedBfOut2', s2 ? (s2.samiBfBand ? round(s2.bf,2).toFixed(2) : 'N/A') : '');
   const aggDisplay2 = s2 ? ensureAggregateSpreadResult(s2.v, s2.agg) : null;
@@ -1826,7 +1832,7 @@ function render(e) {
   document.body.classList.toggle('huesker-mode', Boolean(h));
   // In HUESKER mode the main output shows Bd-before-reinforcement (excluding Ast),
   // the carry-over row, and the final adjusted rate as the adopted green result.
-  setText('bdRowLabel', h ? 'Design binder rate before reinforcement' : 'Design binder rate');
+  setText('bdRowLabel', h ? 'Normal seal design binder' : 'Design binder rate');
   setText('bdRowSym', h ? 'Bd before' : 'Bd');
   if (h) {
     const carryText = Number.isFinite(h.carryOver) ? `${h.carryOver >= 0 ? '+' : ''}${round(h.carryOver,2).toFixed(2)}` : '—';
@@ -1842,6 +1848,7 @@ function render(e) {
     if (h.siteAllowance > 0) setText('hueskerSiteOut', `+${h.siteAllowance.toFixed(2)}`);
     setText('hueskerCarryOut', carryText);
     setText('hueskerAdjustedOut', finalText);
+    setText('hueskerBondMainOut', Number.isFinite(h.bond) ? round(h.bond,2).toFixed(2) : '—');
     setText('hueskerCarryMainOut', carryText);
     setText('hueskerFinalMainOut', finalText);
     document.getElementById('hueskerCarryOut')?.classList.toggle('warn', h.negativeCarryOver || !Number.isFinite(h.carryOver));
