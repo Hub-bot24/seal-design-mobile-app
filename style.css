@@ -185,6 +185,7 @@ footer{display:none}
 .mini-note-dot.warning{color:#b91c1c;background:#fff1f2}
 .mini-note-dot.applied{color:#008a3d;background:#ecfdf3}
 .mini-note-dot.info{color:#155a95;background:#eff6ff}
+.label-note-anchor{position:relative;padding-right:26px!important}
 .final-results .r.muted-result strong{
   background:linear-gradient(180deg,#eaf8ff,#d9effb);
   color:#06395f;
