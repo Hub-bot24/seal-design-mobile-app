@@ -616,6 +616,9 @@ function buildDesignNotes(r) {
   } else if (!isSecondCoat && r.ehvPct > 25) {
     notes.push(note('CHECK', 'EHV %', `EHV is ${round(r.ehvPct,2)}%. Review heavy vehicle effects and stress conditions.`, 'AGPT04K-26 Section 5.2.5'));
   }
+  if (!isSecondCoat && r.ehvPct > 65) {
+    notes.push(note('APPLIED', 'EHV nominal traffic', `EHV is ${round(r.ehvPct,2)}%, which exceeds 65%. The normal Vt heavy-vehicle correction is not applied (Vt = 0), and the traffic used for the Basic Voids Factor has been converted from the normal design traffic (${round(r.normalDesignTraffic,0)} v/l/d) to a nominal design traffic (${round(r.nominalDesignTraffic,0)} v/l/d) using nominalDesignTraffic = normalDesignTraffic × (LV% + 10×(SHV% + 3×LHV%)) / 100. This nominal value is what the "Design traffic" row and Vf now show; actual AADT and actual lane traffic are unchanged.`, 'AGPT04K-26 Table 6.2 / traffic effects lookup — EHV > 65% nominal traffic method'));
+  }
 
 
   if (spec === 'TN175') {
@@ -1588,6 +1591,7 @@ function renderInlineNotes(notes) {
     if (key === 'aba') matches = byField.get('Binder Abs. by Agg.') || [];
     if (key === 'ap') matches = (byField.get('Binder Abs. by Pav.') || []).concat(byField.get('Cutback binder / AMC') || []);
     if (key === 'ae') matches = byField.get('Embedment') || [];
+    if (key === 'designTraffic') matches = byField.get('EHV nominal traffic') || [];
     if (key === 'binder') matches = (byField.get('Binder factor') || []).concat(byField.get('Cutback binder / AMC') || []);
     if (key === 'binder2') matches = (byField.get('Second coat – Binder factor') || []).concat(byField.get('Second coat – Cutback binder / AMC') || []);
 
