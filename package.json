@@ -1,0 +1,9 @@
+{
+  "name": "seal-design-mobile-app",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Spray Seal Design Calculator (AGPT04K-26 / TN175). Static app; no build step required.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
