@@ -542,8 +542,8 @@ function buildDesignNotes(r) {
     notes.push(note('WARNING', coatPrefix + 'Flakiness Index', r.shape.message, 'AGPT04K-26 Table 6.1'));
   }
 
-  if (!r.samiMode && r.traffic.vld > 0 && r.traffic.vld < 100) {
-    notes.push(note('APPLIED', coatPrefix + 'Low traffic voids factor plateau', `Design traffic is ${round(r.traffic.vld,0)} v/l/d. The basic voids factor curves are flat below 100 v/l/d, so Vf has been held at the 100 v/l/d value (${round(r.vfRaw,3).toFixed(3)}).`, 'AGPT04K-26 Figures 6.1 / 6.3'));
+  if (!r.samiMode && r.effectiveDesignTraffic > 0 && r.effectiveDesignTraffic < 100) {
+    notes.push(note('APPLIED', coatPrefix + 'Low traffic voids factor plateau', `Design traffic is ${round(r.effectiveDesignTraffic,0)} v/l/d. The basic voids factor curves are flat below 100 v/l/d, so Vf has been held at the 100 v/l/d value (${round(r.vfRaw,3).toFixed(3)}).`, 'AGPT04K-26 Figures 6.1 / 6.3'));
   }
   if (r.vt !== 0) {
     notes.push(note('APPLIED', coatPrefix + 'Traffic effects', `Traffic effects adjustment Vt = ${round(r.vt,3)} applied from EHV ${round(r.ehvPct,2)}%, gradient '${r.v.gradient}', and channelised/braking '${r.v.braking}'.`, 'AGPT04K-26 Table 6.2 / traffic effects lookup'));
@@ -1441,6 +1441,19 @@ function buildHatelitNotes(r) {
   return notes;
 }
 
+// AGPT04K-26 / TN175: once EHV exceeds 65%, the normal Vt heavy-vehicle correction is
+// not used (heavyVehicleGradientCorrection already returns 0 above this threshold).
+// Instead, the traffic fed into the Basic Voids Factor is converted to a nominal
+// design traffic that already represents the heavy-vehicle loading, so the two
+// effects are never double-counted. This is the single place that performs that
+// conversion, and it always starts from normalDesignTraffic — never from a value
+// that has already been converted — so repeated recalculation can never convert it
+// twice.
+function getEffectiveDesignTraffic(normalDesignTraffic, ehvPct, lvPct, shvPct, lhvPct) {
+  const nominalDesignTraffic = normalDesignTraffic * (lvPct + 10 * (shvPct + 3 * lhvPct)) / 100;
+  const effectiveDesignTraffic = ehvPct > 65 ? nominalDesignTraffic : normalDesignTraffic;
+  return { nominalDesignTraffic, effectiveDesignTraffic };
+}
 function calculateCoat(v) {
   const shvPct = Math.max(0, asNum(v.shvPct));
   const lhvPct = Math.max(0, asNum(v.lhvPct));
@@ -1449,7 +1462,12 @@ function calculateCoat(v) {
   const lvPct = Math.max(0, 100 - hvPct);
   const traffic = compoundTraffic(v);
   const samiMode = isSamiTreatment(v.treatment);
-  const vfRaw = vehicleFactor(traffic.vld, v.sealType);
+  // normalDesignTraffic is the existing lane/common-path design traffic (traffic.vld),
+  // unchanged. effectiveDesignTraffic is what actually feeds the Basic Voids Factor:
+  // it only diverges from normalDesignTraffic when EHV > 65%.
+  const normalDesignTraffic = traffic.vld;
+  const { nominalDesignTraffic, effectiveDesignTraffic } = getEffectiveDesignTraffic(normalDesignTraffic, ehvPct, lvPct, shvPct, lhvPct);
+  const vfRaw = vehicleFactor(effectiveDesignTraffic, v.sealType);
   const vtRaw = heavyVehicleGradientCorrection(ehvPct, v.gradient, v.braking);
   const shapeRaw = aggregateShapeAdjustment(v.flIndex);
   const bfRaw = binderFactor(v.spec, v.sealType, v.treatment, v.binder);
@@ -1500,7 +1518,7 @@ function calculateCoat(v) {
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
   const emulsionContent = emulsionBinderContent(v.binder);
   const emulsionSprayRate = emulsionContent ? finalBinder / emulsionContent : null;
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, bfRaw, samiBfBand, adoptedSamiBf, samiBfAtBandMin, samiBfOutOfBand, samiBandRates, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, emulsionContent, emulsionSprayRate, agg, notes: [] };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, normalDesignTraffic, nominalDesignTraffic, effectiveDesignTraffic, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, bfRaw, samiBfBand, adoptedSamiBf, samiBfAtBandMin, samiBfOutOfBand, samiBandRates, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, finalBinder, emulsionContent, emulsionSprayRate, agg, notes: [] };
 }
 function calculate() {
   const v = formValues();
@@ -1762,6 +1780,10 @@ function render(e) {
   setText('secondColHead', r.second ? r.secondLabel : 'Second coat');
   const designAadt = round(r.traffic.aadt, 0);
   const vld = round(r.traffic.vld, 0);
+  // Design traffic display: the actual lane traffic (vld/vldOut) is untouched, but the
+  // "Design traffic" row that feeds/explains Vf must show the effective traffic —
+  // identical to vld unless EHV > 65%, in which case it's the nominal traffic.
+  const effectiveVld = round(r.effectiveDesignTraffic, 0);
   const lv = round(r.traffic.vld * (r.lvPct / 100), 1);
   const shvVeh = round(r.traffic.vld * (r.shvPct / 100), 1);
   const lhvVeh = round(r.traffic.vld * (r.lhvPct / 100), 1);
@@ -1776,7 +1798,7 @@ function render(e) {
   setText('ehvOut', `${round(r.ehvPct,2).toFixed(2)}%`);
   setText('yearCountOut', r.traffic.years);
   setText('designAadtBig', designAadt);
-  setText('designTrafficOut', vld);
+  setText('designTrafficOut', effectiveVld);
   setText('vfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
   setText('vaOut', r.samiMode ? 'N/A' : round(r.shape.va,3));
   setText('vtOut', r.samiMode ? 'N/A' : round(r.vt,3));
@@ -1800,7 +1822,7 @@ function render(e) {
   setText('aggSpreadBaseOut', aggDisplayBaseCell(aggDisplay));
   setText('aggSpreadOut', aggDisplayRateCell(aggDisplay));
   const s2 = r.second;
-  setText('designTrafficOut2', s2 ? round(s2.traffic.vld,0) : '');
+  setText('designTrafficOut2', s2 ? round(s2.effectiveDesignTraffic,0) : '');
   setText('vfOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vf,3).toFixed(3)) : '');
   setText('vaOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.shape.va,3)) : '');
   setText('vtOut2', s2 ? (s2.samiMode ? 'N/A' : round(s2.vt,3)) : '');
@@ -1826,7 +1848,7 @@ function render(e) {
   const aggDisplay2 = s2 ? ensureAggregateSpreadResult(s2.v, s2.agg) : null;
   setText('aggSpreadBaseOut2', s2 ? aggDisplayBaseCell(aggDisplay2) : '');
   setText('aggSpreadOut2', s2 ? aggDisplayRateCell(aggDisplay2) : '');
-  setText('rightTrafficOut', vld);
+  setText('rightTrafficOut', effectiveVld);
   setText('rightVfOut', r.samiMode ? 'N/A' : round(r.vf,3).toFixed(3));
   const h = r.huesker;
   document.body.classList.toggle('huesker-mode', Boolean(h));
