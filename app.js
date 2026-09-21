@@ -130,6 +130,7 @@ function updateTreatmentAndBinderOptions() {
   const spec = $('[name="spec"]')?.value || 'TN175';
   const typeEl = $('[name="sealType"]');
   const treatmentEl = $('[name="treatment"]');
+  const treatment2El = $('[name="treatment2"]');
   const binderEl = $('[name="binder"]');
   const binder2El = $('[name="binder2"]');
   const agg2El = $('[name="aggregateSize2"]');
@@ -151,9 +152,22 @@ function updateTreatmentAndBinderOptions() {
   const preferredBinder = currentBinder && binders.some(v => norm(v) === norm(currentBinder)) ? currentBinder : (binders.includes('C170') ? 'C170' : binders[0]);
   setOptions(binderEl, binders, preferredBinder);
 
-  // Second application binder is its own selection. It comes from Double 2nd Coat + current treatment.
-  const secondType = rows.find(r => norm(r.BF_Type).includes('DOUBLE 2ND'))?.BF_Type || 'Double 2nd Coat';
-  const secondRows = rows.filter(r => norm(r.BF_Type).includes('DOUBLE 2ND') && norm(r.BF_Treatment) === norm(treatmentEl?.value));
+  // Second coat treatment is its own selection: it defaults to the first coat's
+  // treatment (kept in sync until the designer overrides it), but a double seal can
+  // legitimately run a different treatment per coat, e.g. a Conventional Seal first
+  // coat under an HSS2/SAM second coat. Without this, the two coats were forced to
+  // share one treatment, which also made some first/second binder combinations
+  // impossible to select (a binder can be valid for one treatment only).
+  const secondTypeRows = rows.filter(r => norm(r.BF_Type).includes('DOUBLE 2ND'));
+  const secondTreatments = valuesFromRows(secondTypeRows, 'BF_Treatment');
+  const currentTreatment2 = treatment2El?.value;
+  const preferredTreatment2 = currentTreatment2 && secondTreatments.some(v => norm(v) === norm(currentTreatment2))
+    ? currentTreatment2
+    : (secondTreatments.some(v => norm(v) === norm(treatmentEl?.value)) ? treatmentEl.value : (secondTreatments.includes('Conventional Seal') ? 'Conventional Seal' : secondTreatments[0]));
+  setOptions(treatment2El, secondTreatments, preferredTreatment2);
+
+  // Second application binder comes from Double 2nd Coat + the second coat's own treatment.
+  const secondRows = secondTypeRows.filter(r => norm(r.BF_Treatment) === norm(treatment2El?.value));
   const secondBinders = valuesFromRows(secondRows, 'BF_Binder');
   const currentBinder2 = binder2El?.value;
   const preferredBinder2 = currentBinder2 && secondBinders.some(v => norm(v) === norm(currentBinder2))
@@ -1532,6 +1546,7 @@ function calculate() {
       ...v,
       _secondCoat: '1',
       sealType: 'Double 2nd Coat',
+      treatment: v.treatment2 || v.treatment,
       aggregateSize: secondAgg,
       aldMirror: v.aldMirror2 || defaultAldForAggregate(secondAgg, 3.8),
       flIndex: v.flIndex2 || v.flIndex,
@@ -1763,7 +1778,7 @@ function initHueskerDefaults() {
   }
 }
 function render(e) {
-  if (['spec','sealType','treatment','aggregateSize'].includes(e?.target?.name)) {
+  if (['spec','sealType','treatment','treatment2','aggregateSize'].includes(e?.target?.name)) {
     if (e?.target?.name === 'aggregateSize') {
       const agg2 = secondCoatAggregate(e.target.value);
       setVal('aggregateSize2', agg2);
@@ -1950,6 +1965,7 @@ function copySummary() {
 
 Second coat:
 Type: Double 2nd Coat
+Treatment: ${r.second.v.treatment}
 Binder: ${r.second.v.binder}
 Aggregate: ${r.second.v.aggregateSize}
 ALD: ${round(r.second.ald,2)} mm
