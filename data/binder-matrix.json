@@ -928,6 +928,41 @@
     },
     {
       "spec": "TN175",
+      "type": "Single",
+      "treatment": "S/S Under Asphalt",
+      "binder": "C170",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "S/S Under Asphalt",
+      "binder": "C240",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "S/S Under Asphalt",
+      "binder": "C320",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "S/S Under Asphalt",
+      "binder": "M500",
+      "bf": 1.1
+    },
+    {
+      "spec": "TN175",
+      "type": "Single",
+      "treatment": "S/S Under Asphalt",
+      "binder": "C170 + 5 parts crumb rubber",
+      "bf": 1.0
+    },
+    {
+      "spec": "TN175",
       "type": "Double 1st Coat",
       "treatment": "Conventional Seal",
       "binder": "C170",
