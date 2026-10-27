@@ -712,7 +712,7 @@ function buildDesignNotes(r) {
       notes.push(note('APPLIED', coatPrefix + 'TN175 interlayer aggregate spread', 'SAMI and WP-A aggregate spread rates are typically 20% lighter than standard single/single seal spread rates to ensure asphalt layer adhesion. Overspreading can cause debonding and/or shoving failures.', 'TN175 Section 5.5.4 / Table Q6.10'));
     }
     if (isTn175SsUnderAsphalt(r.v.treatment)) {
-      notes.push(note('CHECK', coatPrefix + 'TN175 S/S waterproofing under asphalt', 'For exposed granular pavement under asphalt, TN175 typically requires a prime followed by a single/single seal or initial seal to waterproof the pavement. If immediate trafficking is required, an initial seal can be used in lieu of prime and seal. Adequate prime curing time must be allowed.', 'TN175 Section 5.5.4 / Table Q5.5.4'));
+      notes.push(note('CHECK', coatPrefix + 'TN175 S/S under asphalt – pavement absorption (Ap)', 'Where the S/S is sprayed directly onto granular pavement without a prime, consider a binder absorption by pavement (Ap) allowance: granular unbound +0.1 to +0.2 L/m², cementitious stabilised +0.0 to +0.1 L/m², bitumen stabilised −0.1 to +0.1 L/m². Where more than 0.2 L/m² is needed, consider an alternative treatment.', 'AGPT04K-26 Section 6.2.4 / TN175 Section 5.5.4'));
       if (norm(r.v.binder).startsWith('S')) notes.push(note('CHECK', coatPrefix + 'TN175 PMB adhesion on primed granular surface', 'TN175 notes reduced adhesion may occur between primed granular pavement and polymer modified binder compared with primed granular pavement and C170.', 'TN175 Section 5.5.4'));
       if (isTn175SsUnderAsphaltSelected(r.v.treatment)) {
         const ssCls = aggregateSizeClass(r.v.aggregateSize);
@@ -721,7 +721,7 @@ function buildDesignNotes(r) {
         notes.push(note('APPLIED', coatPrefix + 'TN175 S/S under asphalt spread rate', isSevenMmAggregate(r.v.aggregateSize)
           ? 'Normal single/single spread rates (Table Q6.8) are not used. TN175 Table Q5.5.4 gives a typical (recommended) spread rate of 220 m²/m³ for 7 mm S/S under asphalt.'
           : 'Normal single/single spread rates (Table Q6.8) are not used. TN175 Table Q5.5.4 gives a typical (recommended) spread rate of 1000–1100/ALD for 10 mm and 14 mm S/S under asphalt.', 'TN175 Table Q5.5.4'));
-        notes.push(note('CHECK', coatPrefix + 'TN175 S/S under asphalt vs WP-A', 'Use S/S (prime + seal) on primed unbound, lightly bound or heavily bound pavement under asphalt. WP-A is for between asphalt layers and uses 10 or 14 mm only (no 7 mm); C170 in WP-A needs Administrator approval.', 'TN175 Section 5.5.4 / MRTS11 Table 5.2.1 Note 1'));
+        notes.push(note('CHECK', coatPrefix + 'TN175 S/S under asphalt vs WP-A', 'Use S/S on unbound, lightly bound or heavily bound pavement under asphalt. WP-A is for between asphalt layers and uses 10 or 14 mm only (no 7 mm); C170 in WP-A needs Administrator approval.', 'TN175 Section 5.5.4 / MRTS11 Table 5.2.1 Note 1'));
       }
     }
     const sprayMin = tn175TypicalSprayMinimum(r.v.treatment, r.v.aggregateSize);

@@ -55,5 +55,5 @@ Problem: a 7 mm C170 seal under asphalt (e.g. prime + seal on exposed granular p
 Added TN175 Single treatment "S/S Under Asphalt" with binders C170, C240, C320, M500 (BF 1.1) and C170 + 5 parts crumb rubber (MRTS11 S/S binder classes; no AMC cutback).
 Spread rate: 7 mm = 220 m²/m³; 10 mm and 14 mm = 1000–1100/ALD (normal Q6.8 rates do not apply).
 Recommended spray rate: TN175 Table Q5.5.4 lists TYPICAL spray rates of ≥1.0 (7 mm), ≥1.2 (10 mm), ≥1.5 (14 mm) L/m². This is guidance, not a hard minimum, so the calculated rate is NOT changed; a CHECK note recommends the typical rate when the calculation is below it.
-Notes: prime required first + curing time; PMB adhesion on primed granular; aggregate must be 14/10/7 mm; S/S vs WP-A guidance (WP-A is 10/14 mm only; C170 WP-A needs Administrator approval).
+Notes: no prime assumed (designer's practice) – Ap pavement absorption guidance from AGPT04K-26 6.2.4 shown instead of a prime requirement; PMB adhesion on primed granular; aggregate must be 14/10/7 mm; S/S vs WP-A guidance (WP-A is 10/14 mm only; C170 WP-A needs Administrator approval).
 Tests: test/ss-under-asphalt.test.mjs.
