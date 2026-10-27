@@ -492,3 +492,16 @@ body.sami-band-mode .sami-bf-row,body.sami-band-mode .sami-band-row{display:grid
     grid-template-rows:auto auto auto 1fr !important;
   }
 }
+
+/* v63 — Seal design picker drives the rest of the form */
+.setup-field.design-field{border-color:#008a3d!important;box-shadow:0 0 0 3px rgba(0,166,81,.14),0 10px 26px rgba(11,34,57,.10)!important}
+.setup-field.design-field select{font-size:15px!important;line-height:1.15}
+.setup-field.derived-field output{display:block;padding:4px 12px 11px;text-align:center;font-size:17px;font-weight:950;color:#0c3f6b;min-height:34px}
+.setup-field span i{font-style:normal;font-weight:800;letter-spacing:.04em;text-transform:none;color:#6b7f93;margin-left:4px}
+.setup-field.single-choice select{pointer-events:none;appearance:none;-webkit-appearance:none;color:#0c3f6b!important}
+.design-card{margin:0 0 10px}
+.design-card p{margin:0;padding:8px 11px 0;font-size:12px;line-height:1.38;color:#16314c;font-weight:700}
+.design-card p.design-guidance{color:#365069;font-weight:600}
+.design-card small{display:block;padding:6px 11px 9px;font-size:10.5px;font-weight:900;color:#5a6f85}
+body.under-asphalt-design .design-card .context-title{background:#fff6e5}
+body.initial-seal-design .design-card .context-title{background:#effaf3}

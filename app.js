@@ -34,6 +34,217 @@ function uiSealTypeLabel(value) {
 }
 function isDoubleSeal(value) { return norm(value).includes('DOUBLE'); }
 
+// ---------------------------------------------------------------------------
+// SEAL DESIGN CATALOGUE (v63)
+// The designer picks the seal design first. The design then determines:
+//   - seal type (single/single or double/double) and whether the second coat shows
+//   - the treatment(s) allowed for each coat
+//   - the binders allowed for each coat (filtered from the binder matrix)
+//   - the aggregate sizes offered for each coat, and their defaults
+//   - which reinforcement systems are relevant
+// Sources: AGPT04K-26 Table 4.6 / 4.7 / Section 4.8-4.10, TN175 (Dec 2025)
+// Sections 4.5.2, 4.8, 4.9.2, 5.5.4 and Table Q5.5.4, HUESKER installation guide.
+// ---------------------------------------------------------------------------
+const CONVENTIONAL_BITUMEN = ['C170', 'C240', 'C320', 'M500', 'C170 + 5 parts crumb rubber'];
+const CUTBACK_BINDERS = ['AMC5', 'AMC6', 'AMC7'];
+const PLAIN_EMULSIONS = ['Emulsion(≥67%)', 'Emulsion(60%)'];
+const UNDER_ASPHALT_EMULSIONS = ['Emulsion(≥67%)-Under Asphalt', 'Emulsion(60%)-Under Asphalt'];
+const RF_NONE = 'None';
+const RF_HUESKER = ['HUESKER Chipseal Grid A10 / A10 eco', 'HUESKER Chipseal Grid A15 / A15 eco'];
+const RF_UNDER_ASPHALT = ['HUESKER HaTelit C Asphalt Reinforcement', 'GlasGrid / MRTS104 Asphalt Geosynthetic'];
+const AGG_7_10_14 = ['7mm', '10mm', '14mm and Greater'];
+const AGG_FIRST_DOUBLE = ['10mm', '14mm and Greater'];
+const AGG_SECOND_DOUBLE = ['5mm', '7mm', '10mm'];
+
+const SEAL_DESIGNS = [
+  {
+    id: 'SS', group: 'Wearing course seals', label: 'S/S — Single/single seal',
+    type: 'Single', treatments: ['Conventional Seal', 'Unmodified Emulsion Seal', 'Modified Emulsion Seal'],
+    binders: { 'Conventional Seal': CONVENTIONAL_BITUMEN, 'Unmodified Emulsion Seal': PLAIN_EMULSIONS },
+    aggs: AGG_7_10_14, defAgg: '10mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Reseal or secondary seal on an existing bituminous surface or primed/initial-sealed pavement.',
+    guidance: 'Table 4.7: S/S with C170 or C240 for low to medium traffic and EHV with no high-stress areas. C320 or M500 may suit hot climates.',
+    source: 'AGPT04K-26 Table 4.7'
+  },
+  {
+    id: 'DD', group: 'Wearing course seals', label: 'D/D — Double/double seal',
+    type: 'Double', treatments: ['Conventional Seal', 'Unmodified Emulsion Seal'], treatments2: ['Conventional Seal', 'Unmodified Emulsion Seal'],
+    binders: { 'Conventional Seal': CONVENTIONAL_BITUMEN, 'Unmodified Emulsion Seal': PLAIN_EMULSIONS },
+    aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Robust two-application seal for higher traffic, small-radius curves, intersections and grades.',
+    guidance: 'Table 4.7: D/D with C170 or C240 suits higher stress or higher EHV than a S/S. Common combinations: 10/5, 10/7, 14/7, 16/7, 20/10 (TN175 also allows 14/10 and 16/10 with Table Q4.3.2 measures).',
+    source: 'AGPT04K-26 Table 4.7 / TN175 4.5.2'
+  },
+  {
+    id: 'HSS1', group: 'Wearing course seals', label: 'HSS1 — High stress S/S (PMB)',
+    type: 'Single', treatments: ['HSS1-M', 'HSS1-H'],
+    aggs: AGG_7_10_14, defAgg: '14mm and Greater',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Single/single seal with PMB for moderately severe (HSS1-M) or severe (HSS1-H) sites.',
+    guidance: 'Table 4.7: HSS1-M uses S10E, S35E, S9R, S9RF, S15R or S15RF; HSS1-H uses S15E, S20E, S15R or S15RF.',
+    source: 'AGPT04K-26 Table 4.7'
+  },
+  {
+    id: 'HSS2', group: 'Wearing course seals', label: 'HSS2 — High stress D/D (PMB)',
+    type: 'Double', treatments: ['HSS2-M', 'HSS2-H'], treatments2: ['HSS2-M', 'HSS2-H', 'Conventional Seal'],
+    binders2: { 'Conventional Seal': CONVENTIONAL_BITUMEN },
+    aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Double/double seal with PMB in the first application, or in both, for medium (M) or heavy (H) traffic loading.',
+    guidance: 'Table 4.7: PMB in first or both applications. The second coat can be HSS2 or a conventional bitumen coat.',
+    source: 'AGPT04K-26 Table 4.7'
+  },
+  {
+    id: 'XSS', group: 'Wearing course seals', label: 'XSS — Extreme stress D/D (PMB both coats)',
+    type: 'Double', treatments: ['XSS'], treatments2: ['XSS'],
+    aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Double/double seal with PMB in both applications for high-stress areas.',
+    guidance: 'Table 4.7: S20E, S15R or S15RF in both applications (TN175 Q6.5 also lists S15E). Seal performance may be inadequate under these conditions; dense graded asphalt may be needed.',
+    source: 'AGPT04K-26 Table 4.7 / Table 6.5'
+  },
+  {
+    id: 'SAM_SS', group: 'Crack treatments', label: 'SAM — Strain alleviating membrane S/S',
+    type: 'Single', treatments: ['SAM-S', 'SAM-R'],
+    aggs: ['10mm', '14mm and Greater'], defAgg: '14mm and Greater',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Seal over cracked pavements. SAM-S for slow (environmental) crack movement; SAM-R for rapid (traffic-induced) movement.',
+    guidance: 'Table 4.7: preferred SAM is a S/S with 14 or 10 mm aggregate. Minimum binder rate for SAM is 1.5 L/m².',
+    source: 'AGPT04K-26 Table 4.7'
+  },
+  {
+    id: 'SAM_DD', group: 'Crack treatments', label: 'SAM — D/D (cracked + high stress)',
+    type: 'Double', treatments: ['SAM-S', 'SAM-R'], treatments2: ['SAM-S', 'SAM-R'],
+    aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'SAM built as a double/double where cracking and high-stress conditions occur together.',
+    guidance: 'Table 4.7: a D/D SAM may be required where there are also high-stress conditions. Minimum binder rate for SAM is 1.5 L/m².',
+    source: 'AGPT04K-26 Table 4.7'
+  },
+  {
+    id: 'AR', group: 'Wearing course seals', label: 'AR — Aggregate retention seal',
+    type: 'Single', treatments: ['Aggregate retention(AR)'],
+    aggs: AGG_7_10_14, defAgg: '10mm',
+    reinforcement: [RF_NONE, ...RF_HUESKER],
+    purpose: 'Single/single seal with S10E or S35E PMB for improved aggregate retention.',
+    guidance: 'Binders from the workbook PRODUCT LIST: S35E or S10E.',
+    source: 'Workbook Lookups'
+  },
+  {
+    id: 'INIT_SS', group: 'Initial seals', label: 'Initial seal — S/S',
+    type: 'Single', treatments: ['Conventional Seal', 'Unmodified Emulsion Seal'],
+    binders: { 'Conventional Seal': [...CUTBACK_BINDERS, 'C170', 'C320', 'M500'], 'Unmodified Emulsion Seal': PLAIN_EMULSIONS },
+    aggs: AGG_7_10_14, defAgg: '10mm',
+    reinforcement: [RF_NONE],
+    initial: true,
+    purpose: 'First seal on a granular, stabilised or foamed-bitumen base in lieu of a prime and seal.',
+    guidance: 'Table 4.6 / TN175 4.8.1: AMC6 typical winter grade (AMC5 if cold and wet), AMC7 typical summer grade; HBCE (≥67%) suits cooler or damp conditions. 7 and 10 mm aggregate; 14 mm is not recommended.',
+    source: 'AGPT04K-26 Table 4.6 / TN175 4.8'
+  },
+  {
+    id: 'INIT_DD', group: 'Initial seals', label: 'Initial seal — D/D',
+    type: 'Double', treatments: ['Conventional Seal', 'Unmodified Emulsion Seal'], treatments2: ['Conventional Seal', 'Unmodified Emulsion Seal'],
+    binders: { 'Conventional Seal': CUTBACK_BINDERS, 'Unmodified Emulsion Seal': PLAIN_EMULSIONS },
+    aggs: AGG_FIRST_DOUBLE, defAgg: '10mm', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
+    reinforcement: [RF_NONE],
+    initial: true,
+    purpose: 'Initial seal built as a double/double for higher traffic or higher stress sites (corners, intersections, turning areas).',
+    guidance: 'TN175 4.8.1: use AMC7 for cutback D/D initial seals to minimise flushing; HBCE is also suitable. Common combinations 10/5, 10/7 and 14/7.',
+    source: 'AGPT04K-26 4.8.2 / TN175 4.8.1'
+  },
+  {
+    id: 'SAMI', group: 'Under asphalt', label: 'SAMI — Strain alleviating membrane interlayer',
+    type: 'Single', treatments: ['SAMI'],
+    aggs: ['10mm', '14mm and Greater'], defAgg: '14mm and Greater',
+    reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
+    underAsphalt: true,
+    purpose: 'Interlayer over a cracked pavement with an existing bituminous treatment, under asphalt, to reduce reflective cracking.',
+    guidance: 'TN175 Q5.5.4: 14 or 16 mm aggregate, spread 1000–1100/ALD, spray ≥1.8 L/m² (typically 2.0–2.5; 1.5–1.8 in high shear). S25E typical, S18RF allowed. No cutter.',
+    source: 'TN175 Table Q5.5.4'
+  },
+  {
+    id: 'WPA', group: 'Under asphalt', label: 'WP-A — Waterproofing seal under asphalt',
+    type: 'Single', treatments: ['Interlayer Bond Waterproofing'],
+    aggs: ['10mm', '14mm and Greater'], defAgg: '10mm',
+    reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
+    underAsphalt: true,
+    purpose: 'Waterproofing seal between asphalt layers, or between an initial seal and asphalt surfacing.',
+    guidance: 'TN175 Q5.5.4: 10 or 14 mm (14 mm under SMA14), spread 1000–1100/ALD, spray ≥1.5 L/m² (10 mm) or ≥1.8 L/m² (14 mm). S20E or S25E typical; C170 only with Administrator approval. No cutter.',
+    source: 'TN175 Table Q5.5.4'
+  },
+  {
+    id: 'SS_UA', group: 'Under asphalt', label: 'S/S under asphalt — waterproof primed granular',
+    type: 'Single', treatments: ['S/S Under Asphalt', 'Unmodified Emulsion Seal'],
+    binders: { 'S/S Under Asphalt': CONVENTIONAL_BITUMEN, 'Unmodified Emulsion Seal': UNDER_ASPHALT_EMULSIONS },
+    aggs: AGG_7_10_14, defAgg: '10mm',
+    reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
+    underAsphalt: true,
+    purpose: 'Prime plus single/single seal to waterproof granular pavement exposed by milling or construction, before asphalt.',
+    guidance: 'TN175 Q5.5.4: 14, 10 or 7 mm. Spread 1000–1100/ALD (14 and 10 mm) or 220 m²/m³ (7 mm). Spray ≥1.0 (7 mm), ≥1.2 (10 mm), ≥1.5 L/m² (14 mm). C170 typical.',
+    source: 'TN175 Table Q5.5.4'
+  },
+  {
+    id: 'BRIDGE', group: 'Under asphalt', label: 'Bridge deck waterproofing',
+    type: 'Single', treatments: ['Bridge Deck Waterproofing'],
+    aggs: AGG_7_10_14, defAgg: '10mm',
+    reinforcement: [RF_NONE],
+    underAsphalt: true,
+    purpose: 'Waterproofing membrane seal on a bridge deck under asphalt.',
+    guidance: 'Binder from the workbook PRODUCT LIST: S25E. Designed as a fixed-VF waterproofing seal; confirm against the project specification.',
+    source: 'Workbook Lookups'
+  }
+];
+
+// Rows the workbook matrix does not carry but the selectable designs need.
+// BF values: AGPT04K-26 Tables 6.4/6.5 and TN175 Tables Q6.4/Q6.5.
+const EXTRA_BINDER_ROWS = (() => {
+  const rows = [];
+  const add = (spec, type, treatment, binder, bf) => rows.push({ spec, type, treatment, binder, bf });
+  for (const spec of ['AGPT04K-26', 'TN175']) {
+    for (const type of ['Double 1st Coat', 'Double 2nd Coat']) {
+      // XSS: 4K Table 6.5 S20E, S15R, S15RF; TN175 Q6.5 adds S15E. All BF 1.1.
+      (spec === 'TN175' ? ['S15E', 'S20E', 'S15R', 'S15RF'] : ['S20E', 'S15R', 'S15RF']).forEach(b => add(spec, type, 'XSS', b, 1.1));
+      // Unmodified emulsion D/D (Table 6.5 / Q6.5).
+      add(spec, type, 'Unmodified Emulsion Seal', 'Emulsion(≥67%)', 1.1);
+      add(spec, type, 'Unmodified Emulsion Seal', 'Emulsion(60%)', 1.0);
+    }
+    // S/S under asphalt is a conventional single/single (Q5.5.4 binder classes).
+    add(spec, 'Single', 'S/S Under Asphalt', 'C170', 1.0);
+    add(spec, 'Single', 'S/S Under Asphalt', 'C240', 1.0);
+    add(spec, 'Single', 'S/S Under Asphalt', 'C320', 1.0);
+    add(spec, 'Single', 'S/S Under Asphalt', 'M500', 1.1);
+    if (spec === 'TN175') add(spec, 'Single', 'S/S Under Asphalt', 'C170 + 5 parts crumb rubber', 1.0);
+  }
+  return rows;
+})();
+
+function sealDesignById(id) {
+  return SEAL_DESIGNS.find(d => d.id === id) || null;
+}
+function defaultSealDesign() { return SEAL_DESIGNS[0]; }
+// Older saved inputs have no sealDesign: infer one from the seal type + treatment
+// that were saved, so existing designs reopen in the right place.
+function inferSealDesign(sealType, treatment) {
+  const double = isDoubleSeal(sealType) || norm(sealType).includes('DOUBLE');
+  const tr = norm(treatment);
+  const match = SEAL_DESIGNS.find(d => (d.type === 'Double') === double && !d.initial && d.treatments.some(t => norm(t) === tr));
+  return match || (double ? sealDesignById('DD') : defaultSealDesign());
+}
+function designTreatments(design, coat = 1) {
+  return coat === 2 ? (design.treatments2 || design.treatments) : design.treatments;
+}
+function designBinderFilter(design, treatment, coat = 1) {
+  const map = coat === 2 ? (design.binders2 || design.binders) : design.binders;
+  if (!map) return null;
+  const key = Object.keys(map).find(k => norm(k) === norm(treatment));
+  return key ? map[key] : null;
+}
+function designAggregates(design, coat = 1) {
+  return coat === 2 ? (design.aggs2 || AGG_SECOND_DOUBLE) : design.aggs;
+}
+
 function cleanAggregateBaseDisplay(value) {
   return String(value ?? '')
     .replace(/\s*\/\s*ALD/gi, '')
@@ -95,11 +306,14 @@ function aggregateTextureLookupLabel(v) {
 }
 function binderRowsForSpec(spec) {
   const group = norm(spec) === 'TN175' ? 'TN175' : 'AGPT04K-26';
-  const rows = state.binderMatrix?.rows || [];
-  // Use the workbook Lookups-derived binder matrix as the rulebook. Do not show
-  // binders unless that SPEC + TYPE + TREATMENT combination exists in the matrix.
+  const rows = [...(state.binderMatrix?.rows || []), ...EXTRA_BINDER_ROWS];
+  // Use the workbook Lookups-derived binder matrix as the rulebook (plus the few
+  // design rows it lacks — see EXTRA_BINDER_ROWS). Do not show binders unless that
+  // SPEC + TYPE + TREATMENT combination exists.
+  const seen = new Set();
   return rows
     .filter(r => norm(r.spec) === group)
+    .filter(r => { const k = [r.type, r.treatment, r.binder].map(norm).join('|'); if (seen.has(k)) return false; seen.add(k); return true; })
     .map(r => ({ BF_Type: r.type, BF_Treatment: r.treatment, BF_Binder: r.binder, BF_Result: r.bf }));
 }
 function populateOptions() {
@@ -110,8 +324,18 @@ function populateOptions() {
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
   setOptions($('[name="aggregateSize2"]'), aggSizes, '7mm');
   setOptions($('[name="surfaceType"]'), surfaces, 'N/A');
-  setOptions($('[name="sealType"]'), ['Single Seal','Double Seal'], 'Single Seal');
+  populateSealDesignOptions();
   updateTreatmentAndBinderOptions();
+}
+function populateSealDesignOptions() {
+  const el = $('[name="sealDesign"]');
+  if (!el) return;
+  const groups = [...new Set(SEAL_DESIGNS.map(d => d.group))];
+  el.innerHTML = groups.map(g => `<optgroup label="${safe(g)}">${SEAL_DESIGNS.filter(d => d.group === g).map(d => `<option value="${safe(d.id)}">${safe(d.label)}</option>`).join('')}</optgroup>`).join('');
+  el.value = defaultSealDesign().id;
+}
+function currentSealDesign() {
+  return sealDesignById($('[name="sealDesign"]')?.value) || defaultSealDesign();
 }
 function valuesFromRows(rows, field) {
   const out = [];
@@ -126,58 +350,83 @@ function valuesFromRows(rows, field) {
   });
   return out;
 }
-function updateTreatmentAndBinderOptions() {
+function treatmentsWithBinders(rows, lookupType, treatments) {
+  return treatments.filter(t => rows.some(r => norm(r.BF_Type) === norm(lookupType) && norm(r.BF_Treatment) === norm(t)));
+}
+function bindersFor(rows, lookupType, treatment, filter) {
+  const all = valuesFromRows(rows.filter(r => norm(r.BF_Type) === norm(lookupType) && norm(r.BF_Treatment) === norm(treatment)), 'BF_Binder');
+  if (!filter) return all;
+  const kept = all.filter(b => filter.some(f => norm(f) === norm(b)));
+  return kept.length ? kept : all;
+}
+function pickPreferred(values, current, ...fallbacks) {
+  if (current && values.some(v => norm(v) === norm(current))) return values.find(v => norm(v) === norm(current));
+  for (const f of fallbacks) if (f && values.some(v => norm(v) === norm(f))) return values.find(v => norm(v) === norm(f));
+  return values[0];
+}
+// The seal design drives everything below it: seal type, treatment(s), binders,
+// aggregate sizes and reinforcement options. When the designer picks a new design
+// (`designChanged`), its defaults are applied: first treatment, typical binder and
+// default aggregate sizes. ALD is reset to the typical value only if the aggregate
+// size actually changed, so a measured ALD for the same size is kept.
+function updateTreatmentAndBinderOptions(designChanged = false) {
   const spec = $('[name="spec"]')?.value || 'TN175';
-  const typeEl = $('[name="sealType"]');
+  const design = currentSealDesign();
+  const rows = binderRowsForSpec(spec);
+  const double = design.type === 'Double';
+
+  // Seal type is determined by the design (hidden field keeps the calc engine unchanged).
+  setVal('sealType', double ? 'Double Seal' : 'Single Seal');
+  setText('sealTypeOut', double ? 'Double/double' : 'Single/single');
+  const lookupType = uiSealTypeToLookupType(double ? 'Double Seal' : 'Single Seal');
+
+  // First (or only) coat.
   const treatmentEl = $('[name="treatment"]');
-  const treatment2El = $('[name="treatment2"]');
+  const treatments = treatmentsWithBinders(rows, lookupType, designTreatments(design, 1));
+  setOptions(treatmentEl, treatments, designChanged ? treatments[0] : pickPreferred(treatments, treatmentEl?.value));
+  // Never disable: a disabled select drops out of FormData and the calc loses it.
+  treatmentEl?.closest('.setup-field')?.classList.toggle('single-choice', treatments.length <= 1);
   const binderEl = $('[name="binder"]');
+  const binders = bindersFor(rows, lookupType, treatmentEl?.value, designBinderFilter(design, treatmentEl?.value, 1));
+  setOptions(binderEl, binders, pickPreferred(binders, designChanged ? null : binderEl?.value, 'C170', 'S25E', 'S20E', 'AMC7'));
+
+  const aggEl = $('[name="aggregateSize"]');
+  const aggs = designAggregates(design, 1);
+  const prevAgg = aggEl?.value;
+  setOptions(aggEl, aggs, pickPreferred(aggs, designChanged ? design.defAgg : prevAgg, design.defAgg));
+  if (designChanged && aggEl && norm(aggEl.value) !== norm(prevAgg)) setVal('aldMirror', defaultAldForAggregate(aggEl.value, 5.7));
+
+  // Second coat — only when the design is a double/double.
+  const treatment2El = $('[name="treatment2"]');
   const binder2El = $('[name="binder2"]');
   const agg2El = $('[name="aggregateSize2"]');
+  if (double) {
+    const secondType = 'Double 2nd Coat';
+    const treatments2 = treatmentsWithBinders(rows, secondType, designTreatments(design, 2));
+    setOptions(treatment2El, treatments2, pickPreferred(treatments2, designChanged ? treatmentEl?.value : treatment2El?.value, treatmentEl?.value));
+    const binders2 = bindersFor(rows, secondType, treatment2El?.value, designBinderFilter(design, treatment2El?.value, 2));
+    setOptions(binder2El, binders2, pickPreferred(binders2, designChanged ? binderEl?.value : binder2El?.value, binderEl?.value, 'C170'));
+    const aggs2 = designAggregates(design, 2);
+    const prevAgg2 = agg2El?.value;
+    setOptions(agg2El, aggs2, pickPreferred(aggs2, designChanged ? design.defAgg2 : prevAgg2, design.defAgg2, secondCoatAggregate(aggEl?.value)));
+    if (designChanged && agg2El && norm(agg2El.value) !== norm(prevAgg2)) setVal('aldMirror2', defaultAldForAggregate(agg2El.value, 3.8));
+  }
   const ald2El = $('[name="aldMirror2"]');
-  const rows = binderRowsForSpec(spec);
-
-  const currentType = uiSealTypeLabel(typeEl?.value || 'Single Seal');
-  setOptions(typeEl, ['Single Seal', 'Double Seal'], currentType);
-  const lookupType = uiSealTypeToLookupType(typeEl?.value);
-
-  const currentTreatment = treatmentEl?.value;
-  const typeRows = rows.filter(r => norm(r.BF_Type) === norm(lookupType));
-  const treatments = valuesFromRows(typeRows, 'BF_Treatment');
-  setOptions(treatmentEl, treatments, currentTreatment && treatments.some(v => norm(v) === norm(currentTreatment)) ? currentTreatment : 'Conventional Seal');
-
-  const currentBinder = binderEl?.value;
-  const binderRows = typeRows.filter(r => norm(r.BF_Treatment) === norm(treatmentEl?.value));
-  const binders = valuesFromRows(binderRows, 'BF_Binder');
-  const preferredBinder = currentBinder && binders.some(v => norm(v) === norm(currentBinder)) ? currentBinder : (binders.includes('C170') ? 'C170' : binders[0]);
-  setOptions(binderEl, binders, preferredBinder);
-
-  // Second coat treatment is its own selection: it defaults to the first coat's
-  // treatment (kept in sync until the designer overrides it), but a double seal can
-  // legitimately run a different treatment per coat, e.g. a Conventional Seal first
-  // coat under an HSS2/SAM second coat. Without this, the two coats were forced to
-  // share one treatment, which also made some first/second binder combinations
-  // impossible to select (a binder can be valid for one treatment only).
-  const secondTypeRows = rows.filter(r => norm(r.BF_Type).includes('DOUBLE 2ND'));
-  const secondTreatments = valuesFromRows(secondTypeRows, 'BF_Treatment');
-  const currentTreatment2 = treatment2El?.value;
-  const preferredTreatment2 = currentTreatment2 && secondTreatments.some(v => norm(v) === norm(currentTreatment2))
-    ? currentTreatment2
-    : (secondTreatments.some(v => norm(v) === norm(treatmentEl?.value)) ? treatmentEl.value : (secondTreatments.includes('Conventional Seal') ? 'Conventional Seal' : secondTreatments[0]));
-  setOptions(treatment2El, secondTreatments, preferredTreatment2);
-
-  // Second application binder comes from Double 2nd Coat + the second coat's own treatment.
-  const secondRows = secondTypeRows.filter(r => norm(r.BF_Treatment) === norm(treatment2El?.value));
-  const secondBinders = valuesFromRows(secondRows, 'BF_Binder');
-  const currentBinder2 = binder2El?.value;
-  const preferredBinder2 = currentBinder2 && secondBinders.some(v => norm(v) === norm(currentBinder2))
-    ? currentBinder2
-    : (secondBinders.some(v => norm(v) === norm(binderEl?.value)) ? binderEl.value : (secondBinders.includes('C170') ? 'C170' : secondBinders[0]));
-  setOptions(binder2El, secondBinders, preferredBinder2);
-
-  // Keep a sensible default for the second aggregate, but let the user overwrite it.
-  if (agg2El && !agg2El.value) agg2El.value = secondCoatAggregate($('[name="aggregateSize"]')?.value || '10mm');
   if (ald2El && (!ald2El.value || Number(ald2El.value) <= 0)) ald2El.value = defaultAldForAggregate(agg2El?.value || '7mm', 3.8);
+
+  // Reinforcement systems relevant to this design.
+  const rfEl = $('[name="reinforcementSystem"]');
+  if (rfEl) {
+    const current = rfEl.value;
+    setOptions(rfEl, design.reinforcement, pickPreferred(design.reinforcement, current, RF_NONE));
+  }
+
+  // Design summary card.
+  setText('designPurposeOut', design.purpose);
+  setText('designGuidanceOut', design.guidance);
+  setText('designSourceOut', design.source);
+  document.body.classList.toggle('initial-seal-design', Boolean(design.initial));
+  document.body.classList.toggle('under-asphalt-design', Boolean(design.underAsphalt));
 }
 function formValues() {
   const fd = new FormData($('#designForm'));
@@ -1572,7 +1821,7 @@ function calculate() {
   result.glasgrid = buildGlasgridOverlay(v);
   // HaTelit C: tack coat under asphalt only — no carry-over, no effect on Bd or Ast.
   result.hatelit = buildHatelitOverlay(v);
-  result.notes = buildDesignNotes(result);
+  result.notes = [...buildSealDesignNotes(result), ...buildDesignNotes(result)];
   if (result.second) {
     result.notes.unshift(note('APPLIED', 'Double/double second application', `Double Seal selected. A second calculation column has been applied as ${result.secondLabel}. The second coat uses its own ALD, flakiness index and binder. Ast, Ap and Ae are marked N/A; Aba2 remains optional and defaults to 0.`, 'AGPT04K-26 Section 5.5.2'));
     result.notes.push(...buildDesignNotes(result.second));
@@ -1582,6 +1831,61 @@ function calculate() {
   result.notes.push(...buildHatelitNotes(result));
   result.notes.push(...buildGlasgridNotes(result));
   return result;
+}
+// Notes driven by the selected seal design (v63). These only advise: they never
+// change a calculated value.
+function buildSealDesignNotes(r) {
+  const notes = [];
+  const design = sealDesignById(r.v.sealDesign) || defaultSealDesign();
+  const s2 = r.second;
+  const coats = s2
+    ? `first coat ${r.v.treatment} / ${r.v.binder} / ${r.v.aggregateSize}, second coat ${s2.v.treatment} / ${s2.v.binder} / ${s2.v.aggregateSize}`
+    : `${r.v.treatment} / ${r.v.binder} / ${r.v.aggregateSize}`;
+  notes.push(note('APPLIED', 'Seal design', `${design.label} selected → ${design.type === 'Double' ? 'double/double' : 'single/single'} (${coats}). Treatment, binder, aggregate and reinforcement lists are limited to those that suit this design.`, design.source));
+
+  const vld = asNum(r.effectiveDesignTraffic, 0);
+  const id = design.id;
+  if ((id === 'SS' || id === 'DD') && vld > 2000) {
+    notes.push(note('CHECK', 'Seal design', `Design traffic is ${round(vld,0)} v/l/d. Above 2000 v/l/d Table 4.7 generally points to PMB seals (HSS1, HSS2 or XSS) rather than a conventional ${id === 'SS' ? 'S/S' : 'D/D'}. Confirm the selection.`, 'AGPT04K-26 Table 4.7'));
+  }
+  if (id === 'SS' && r.ehvPct >= 26) {
+    notes.push(note('CHECK', 'Seal design', `EHV is ${round(r.ehvPct,1)}%. At higher EHV Table 4.7 moves from S/S towards D/D or PMB seals. Confirm the selection.`, 'AGPT04K-26 Table 4.7'));
+  }
+  if (id === 'INIT_SS') {
+    if (aggregateSizeClass(r.v.aggregateSize) === '14_PLUS') notes.push(note('WARNING', 'Seal design', '14 mm aggregate is not recommended for single/single initial seals and is not recommended for high-traffic applications. Use 7 or 10 mm unless there is a special requirement.', 'AGPT04K-26 Section 4.8.2'));
+    if (vld > 2000) notes.push(note('CHECK', 'Seal design', `Design traffic is ${round(vld,0)} v/l/d. For high traffic, Table 4.6 mostly lists D/D initial seals; consider an Initial seal — D/D.`, 'AGPT04K-26 Table 4.6'));
+  }
+  if (id === 'INIT_DD') {
+    const cutbacks = [r.v.binder, s2?.v.binder].filter(b => ['AMC5', 'AMC6'].includes(norm(b)));
+    if (cutbacks.length) notes.push(note('CHECK', 'Seal design', `${[...new Set(cutbacks)].join(', ')} selected for a cutback D/D initial seal. TN175 recommends AMC7 for cutback D/D initial seals to minimise flushing risk.`, 'TN175 Section 4.8.1'));
+  }
+  if (design.initial && [r.v.binder, s2?.v.binder].some(b => norm(b).includes('EMULSION'))) {
+    notes.push(note('INFO', 'Seal design', 'Emulsion initial seal: not recommended when pavement surface temperature is outside 10–50 °C during construction, breaking and curing. Verify emulsion compatibility with the pavement material and aggregate.', 'TN175 Section 4.8.1'));
+  }
+  if (id === 'SAM_SS' || id === 'SAM_DD') {
+    const total = r.finalBinder + (s2 ? s2.finalBinder : 0);
+    if (Number.isFinite(total) && total < 1.5) notes.push(note('WARNING', 'Seal design', `SAM binder rate is ${round(total,2).toFixed(2)} L/m²${s2 ? ' (both coats)' : ''}. Table 4.7 sets a minimum binder rate of 1.5 L/m² for SAM applications.`, 'AGPT04K-26 Table 4.7'));
+  }
+  if (id === 'XSS') {
+    notes.push(note('CHECK', 'Seal design', 'XSS: seal performance may be inadequate under these conditions. Where an XSS sprayed seal cannot be expected to cope, dense graded asphalt (10 or 14 mm) is generally used.', 'AGPT04K-26 Table 4.7'));
+  }
+  if (id === 'HSS2' && s2 && norm(s2.v.treatment) === 'CONVENTIONAL SEAL') {
+    notes.push(note('INFO', 'Seal design', 'HSS2 with PMB in the first application only; the second application is conventional bitumen. Table 4.7 allows PMB in the first or both applications.', 'AGPT04K-26 Table 4.7'));
+  }
+  if (id === 'SAMI' && isTn175(r.v.spec) && aggregateSizeClass(r.v.aggregateSize) === '10') {
+    notes.push(note('CHECK', 'Seal design', 'TMR typically uses 14 mm (not 10 mm) aggregate for SAMI seals to allow higher binder rates for reflective-crack resistance.', 'TN175 Section 5.5.4'));
+  }
+  if (id === 'WPA') {
+    notes.push(note('INFO', 'Seal design', '14 mm aggregate must be used for WP-A under SMA14.', 'TN175 Table Q5.5.4'));
+  }
+  if (s2) {
+    const ald1 = asNum(r.ald, 0);
+    const ald2 = asNum(s2.ald, 0);
+    if (ald1 > 0 && ald2 > ald1 / 2) {
+      notes.push(note('CHECK', 'Second coat ALD', `Second coat ALD ${round(ald2,1)} mm is more than half the first coat ALD ${round(ald1,1)} mm. Second coat FI should be 16–25% for interlock, the first coat spread rate should be about 10–20% lighter than typical, and a total binder reduction of up to 0.2 L/m² can be considered.`, 'TN175 Table Q4.3.2'));
+    }
+  }
+  return notes;
 }
 function noteIcon(level) {
   return level === 'WARNING' ? '⚠' : level === 'CHECK' ? '◆' : level === 'APPLIED' ? '✓' : 'i';
@@ -1778,7 +2082,9 @@ function initHueskerDefaults() {
   }
 }
 function render(e) {
-  if (['spec','sealType','treatment','treatment2','aggregateSize'].includes(e?.target?.name)) {
+  if (e?.target?.name === 'sealDesign') {
+    updateTreatmentAndBinderOptions(true);
+  } else if (['spec','treatment','treatment2','aggregateSize'].includes(e?.target?.name)) {
     if (e?.target?.name === 'aggregateSize') {
       const agg2 = secondCoatAggregate(e.target.value);
       setVal('aggregateSize2', agg2);
@@ -1955,9 +2261,15 @@ function render(e) {
   storage.set('seal-design-form', JSON.stringify(r.v));
 }
 function restore() {
-  const saved = JSON.parse(storage.get('seal-design-form') || '{}');
-  for (const [k,v] of Object.entries(saved)) { const el = $(`[name="${k}"]`); if (el) el.value = v; }
-  syncAld($('[name="ald"]'));
+  let saved = {};
+  try { saved = JSON.parse(storage.get('seal-design-form') || '{}') || {}; } catch (_) { saved = {}; }
+  // Inputs saved before the seal design picker existed: infer the design from the
+  // saved seal type + treatment so the design reopens as it was.
+  if (!sealDesignById(saved.sealDesign)) saved.sealDesign = inferSealDesign(saved.sealType, saved.treatment).id;
+  const apply = () => { for (const [k,v] of Object.entries(saved)) { if (k === 'sealType') continue; const el = $(`[name="${k}"]`); if (el) el.value = v; } };
+  // Option lists depend on earlier choices (design → treatment → binder), so apply
+  // the saved values and rebuild the dependent lists until they settle.
+  for (let i = 0; i < 3; i++) { apply(); updateTreatmentAndBinderOptions(); }
 }
 function copySummary() {
   const r = calculate();
@@ -2011,6 +2323,7 @@ Actual emulsion application rate: ${r.glasgrid.rapidStandard ? 'N/A — standard
 Project: ${r.v.projectName}
 Road: ${r.v.roadName}
 Spec: ${r.v.spec}
+Seal design: ${(sealDesignById(r.v.sealDesign) || defaultSealDesign()).label}
 Type: ${uiSealTypeLabel(r.v.sealType)}
 Treatment: ${r.v.treatment}
 Binder: ${r.v.binder}
