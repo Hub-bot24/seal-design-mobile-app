@@ -29,28 +29,30 @@ const BASE = {
 function calc(o) { current = { ...BASE, ...o }; return vm.runInContext('calculate()', ctx); }
 
 const tests = [
-  ['7 mm C170 S/S under asphalt: binder raised to 1.0 L/m², spread 220 m²/m³', () => {
+  ['7 mm C170 S/S under asphalt: calculated rate kept, recommended-rate note shown, spread 220 m²/m³', () => {
     const r = calc({});
-    assert.ok(r.calculatedBinder < 1.0, 'sanity: normal design gives < 1.0');
-    assert.equal(r.finalBinder, 1.0);
-    assert.equal(r.ssMinApplied, true);
+    assert.ok(r.finalBinder < 1.0, 'calculated rate must not be forced up to the TN175 typical rate');
+    assert.equal(r.finalBinder, r.calculatedBinder);
+    assert.equal(r.ssBelowRecommended, true);
     assert.equal(r.agg.m2m3, 220);
-    assert.ok(r.notes.some(n => n.field === 'TN175 S/S under asphalt minimum spray rate' && n.level === 'APPLIED'));
+    assert.ok(r.notes.some(n => n.field === 'TN175 S/S under asphalt recommended spray rate' && n.level === 'CHECK'));
   }],
   ['Conventional Seal 7 mm is unchanged (normal Table Q6.8 spread, no minimum)', () => {
     const r = calc({ treatment: 'Conventional Seal' });
-    assert.equal(r.ssMinApplied, false);
+    assert.equal(r.ssBelowRecommended, false);
     assert.ok(r.finalBinder < 1.0);
     assert.equal(r.agg.source, 'TN175 Table Q6.8');
   }],
-  ['10 mm S/S under asphalt uses 1000–1100/ALD and >= 1.2 L/m²', () => {
+  ['10 mm S/S under asphalt uses 1000–1100/ALD; no note when calc meets 1.2 L/m²', () => {
     const r = calc({ aggregateSize: '10mm', aldMirror: 5.7 });
     assert.ok(r.finalBinder >= 1.2);
+    assert.equal(r.ssBelowRecommended, false);
     assert.equal(r.agg.baseMin, 1000); assert.equal(r.agg.baseMax, 1100);
   }],
-  ['14 mm S/S under asphalt enforces >= 1.5 L/m²', () => {
+  ['14 mm S/S under asphalt below 1.5 L/m²: rate kept, note shown', () => {
     const r = calc({ aggregateSize: '14mm', aldMirror: 5.0 });
-    assert.ok(r.finalBinder >= 1.5);
+    assert.ok(r.finalBinder < 1.5);
+    assert.equal(r.ssBelowRecommended, true);
   }],
   ['AMC cutback is not offered for S/S Under Asphalt', () => {
     const rows = vm.runInContext("EMBEDDED_BINDER_MATRIX.rows.filter(r => r.spec === 'TN175' && r.treatment === 'S/S Under Asphalt').map(r => r.binder)", ctx);

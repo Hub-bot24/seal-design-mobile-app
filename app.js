@@ -719,14 +719,14 @@ function buildDesignNotes(r) {
         const ssSizeOk = isSevenMmAggregate(r.v.aggregateSize) || ssCls === '10' || norm(r.v.aggregateSize).includes('14');
         if (!ssSizeOk) notes.push(note('WARNING', coatPrefix + 'TN175 S/S under asphalt aggregate size', `TN175 Table Q5.5.4 lists 14, 10 or 7 mm aggregate for S/S under asphalt. Current aggregate: ${r.v.aggregateSize}.`, 'TN175 Table Q5.5.4'));
         notes.push(note('APPLIED', coatPrefix + 'TN175 S/S under asphalt spread rate', isSevenMmAggregate(r.v.aggregateSize)
-          ? 'Normal single/single spread rates (Table Q6.8) do not apply. TN175 Table Q5.5.4 typical spread rate for 7 mm S/S under asphalt is 220 m²/m³.'
-          : 'Normal single/single spread rates (Table Q6.8) do not apply. TN175 Table Q5.5.4 typical spread rate for 10 mm and 14 mm S/S under asphalt is 1000–1100/ALD.', 'TN175 Table Q5.5.4'));
+          ? 'Normal single/single spread rates (Table Q6.8) are not used. TN175 Table Q5.5.4 gives a typical (recommended) spread rate of 220 m²/m³ for 7 mm S/S under asphalt.'
+          : 'Normal single/single spread rates (Table Q6.8) are not used. TN175 Table Q5.5.4 gives a typical (recommended) spread rate of 1000–1100/ALD for 10 mm and 14 mm S/S under asphalt.', 'TN175 Table Q5.5.4'));
         notes.push(note('CHECK', coatPrefix + 'TN175 S/S under asphalt vs WP-A', 'Use S/S (prime + seal) on primed unbound, lightly bound or heavily bound pavement under asphalt. WP-A is for between asphalt layers and uses 10 or 14 mm only (no 7 mm); C170 in WP-A needs Administrator approval.', 'TN175 Section 5.5.4 / MRTS11 Table 5.2.1 Note 1'));
       }
     }
     const sprayMin = tn175TypicalSprayMinimum(r.v.treatment, r.v.aggregateSize);
     if (sprayMin && !r.samiMode) {
-      if (r.ssMinApplied) notes.push(note('APPLIED', coatPrefix + 'TN175 S/S under asphalt minimum spray rate', `Calculated binder rate ${round(r.calculatedBinder,2)} L/m² is below the TN175 minimum for S/S under asphalt (${sprayMin.typical}). Design binder rate raised to ${sprayMin.min.toFixed(2)} L/m².`, sprayMin.source));
+      if (r.ssBelowRecommended) notes.push(note('CHECK', coatPrefix + 'TN175 S/S under asphalt recommended spray rate', `Calculated design binder rate is ${round(r.finalBinder,2)} L/m². TN175 Table Q5.5.4 recommends a typical spray rate of ${sprayMin.typical}. This is guidance, not a hard minimum, so the calculated rate has not been changed. Designer to consider adopting ${sprayMin.min.toFixed(1)} L/m².`, sprayMin.source));
       else if (r.finalBinder < sprayMin.min) notes.push(note('WARNING', coatPrefix + 'TN175 typical spray rate', `Design binder rate ${round(r.finalBinder,2)} L/m² is below TN175 typical minimum ${sprayMin.min} L/m² (${sprayMin.typical}).`, sprayMin.source));
       else notes.push(note('APPLIED', coatPrefix + 'TN175 typical spray rate', `Design binder rate ${round(r.finalBinder,2)} L/m² meets TN175 typical check: ${sprayMin.typical}.`, sprayMin.source));
     }
@@ -1543,14 +1543,14 @@ function calculateCoat(v) {
     return samiMode ? round(Math.round(raw * 10) / 10, 1) : raw;
   };
   const calculatedBinder = samiMode ? round(Math.round(binderBeforeRounding * 10) / 10, 1) : binderBeforeRounding;
-  // TN175 Table Q5.5.4: an S/S placed under asphalt (e.g. prime + 7 mm C170 on exposed
-  // granular patches) has minimum spray rates of >=1.0 / 1.2 / 1.5 L/m² for 7 / 10 / 14 mm.
-  // Normal seal design can fall below that, so the minimum is adopted and noted.
+  // TN175 Table Q5.5.4 gives a TYPICAL (recommended) spray rate for S/S under asphalt of
+  // >=1.0 / 1.2 / 1.5 L/m² for 7 / 10 / 14 mm. It is guidance, not a hard minimum, so the
+  // calculated rate is never changed here; a note recommends the typical rate instead.
   const ssUnderAsphaltMin = (isTn175(v.spec) && isTn175SsUnderAsphaltSelected(v.treatment))
     ? tn175TypicalSprayMinimum(v.treatment, v.aggregateSize)
     : null;
-  const ssMinApplied = Boolean(ssUnderAsphaltMin) && calculatedBinder > 0 && calculatedBinder < ssUnderAsphaltMin.min;
-  const finalBinder = ssMinApplied ? ssUnderAsphaltMin.min : calculatedBinder;
+  const ssBelowRecommended = Boolean(ssUnderAsphaltMin) && calculatedBinder > 0 && calculatedBinder < ssUnderAsphaltMin.min;
+  const finalBinder = calculatedBinder;
   // Binder-rate envelope for the TN175 SAMI band, presented the same way as the
   // aggregate spread rate range.
   const samiBandRates = samiBfBand
@@ -1559,7 +1559,7 @@ function calculateCoat(v) {
   const agg = aggregateSpreadRate(v.spec, v.sealType, v.treatment, v.binder, ald, v.aggregateSize);
   const emulsionContent = emulsionBinderContent(v.binder);
   const emulsionSprayRate = emulsionContent ? finalBinder / emulsionContent : null;
-  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, normalDesignTraffic, nominalDesignTraffic, effectiveDesignTraffic, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, bfRaw, samiBfBand, adoptedSamiBf, samiBfAtBandMin, samiBfOutOfBand, samiBandRates, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, calculatedBinder, finalBinder, ssUnderAsphaltMin, ssMinApplied, emulsionContent, emulsionSprayRate, agg, notes: [] };
+  return { v, traffic, shvPct, lhvPct, lvPct, ehvPct, normalDesignTraffic, nominalDesignTraffic, effectiveDesignTraffic, samiMode, vf, vfRaw, vt, vtRaw, shape, shapeRaw, bf, bfRaw, samiBfBand, adoptedSamiBf, samiBfAtBandMin, samiBfOutOfBand, samiBandRates, ar, aba, ap, ae, otherAdjustment, otherRaw, ald, designVf, baseBinder, modifiedBinder, calculatedBinder, finalBinder, ssUnderAsphaltMin, ssBelowRecommended, emulsionContent, emulsionSprayRate, agg, notes: [] };
 }
 function calculate() {
   const v = formValues();
