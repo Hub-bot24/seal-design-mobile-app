@@ -178,6 +178,40 @@ test('design rows do not double-count binder factors already in the workbook mat
   assert.strictEqual(r.bf, 1.1);
 });
 
+test('notes display: titles, coat split, topics', () => {
+  const d = JSON.parse(run(`JSON.stringify([
+    describeNote({ level: 'WARNING', field: 'HUESKER BOND COAT OUT OF RANGE', message: 'x' }, 0),
+    describeNote({ level: 'APPLIED', field: 'Second coat – TN175 binder factor', message: 'x' }, 1),
+    describeNote({ level: 'CHECK', field: 'SAM minimum binder rate', message: 'x' }, 2),
+    describeNote({ level: 'CHECK', field: 'TN175 Vt – median', message: 'x' }, 3),
+    describeNote({ level: 'WARNING', field: 'GLASGRID RESIDUAL OUT OF RANGE', message: 'x' }, 4)
+  ])`));
+  assert.strictEqual(d[0].title, 'HUESKER bond coat out of range');
+  assert.strictEqual(d[0].topic.key, 'reinforcement');
+  assert.strictEqual(d[1].coat, 2);
+  assert.strictEqual(d[1].title, 'TN175 binder factor');
+  assert.strictEqual(d[1].topic.key, 'binder');
+  assert.strictEqual(d[2].topic.key, 'binder');
+  assert.strictEqual(d[3].topic.key, 'traffic');
+  assert.strictEqual(d[4].title, 'GlasGrid residual out of range');
+});
+
+test('every note produced across all designs gets a topic other than Other', () => {
+  const ids = JSON.parse(run('JSON.stringify(SEAL_DESIGNS.map(d => d.id))'));
+  const misses = new Set();
+  for (const spec of ['TN175', 'AGPT04K-26']) for (const id of ids) {
+    const d = JSON.parse(run(`JSON.stringify(sealDesignById(${J(id)}))`));
+    const t1 = treatments(spec, d.type === 'Double' ? 'Double 1st Coat' : 'Single', id, 1)[0];
+    const b1 = binders(spec, d.type === 'Double' ? 'Double 1st Coat' : 'Single', t1, id, 1)[0];
+    const r = calc(form({ spec, sealDesign: id, sealType: d.type === 'Double' ? 'Double Seal' : 'Single Seal', treatment: t1, binder: b1, treatment2: t1, binder2: b1, initialAadt: 9000, shvPct: 30 }));
+    for (const n of r.notes) {
+      const dn = JSON.parse(run(`JSON.stringify(describeNote(${J(n)}, 0))`));
+      if (dn.topic.key === 'other') misses.add(n.field);
+    }
+  }
+  assert.deepEqual([...misses], [], `notes without a topic: ${[...misses].join(', ')}`);
+});
+
 let passed = 0, failed = 0;
 for (const t of tests) {
   try { t.fn(); console.log(`PASS - ${t.name}`); passed++; }
