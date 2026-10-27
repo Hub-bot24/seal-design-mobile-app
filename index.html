@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1f4e79" />
   <title>Spray Seal Design Calculation</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=62" />
+  <link rel="stylesheet" href="style.css?v=64" />
 </head>
 <body>
   <header class="app-header no-print">
@@ -71,8 +71,16 @@
           <div class="premium-setup">
             <div class="setup-strip">
               <div class="setup-field spec-field"><span>SPEC</span><select name="spec" data-options="spec"></select></div>
-              <div class="setup-field"><span>SEAL TYPE</span><select name="sealType" data-options="sealType"></select></div>
+              <div class="setup-field design-field"><span>SEAL DESIGN — pick first</span><select name="sealDesign" data-options="sealDesign"></select></div>
+              <div class="setup-field derived-field"><span>SEAL TYPE <i>set by design</i></span><output id="sealTypeOut">Single/single</output><input type="hidden" name="sealType" value="Single Seal" /></div>
               <div class="setup-field wide"><span>TREATMENT</span><select name="treatment" data-options="treatment"></select></div>
+            </div>
+
+            <div class="context-card design-card" id="designCard">
+              <div class="context-title">Selected seal design</div>
+              <p id="designPurposeOut">—</p>
+              <p class="design-guidance" id="designGuidanceOut">—</p>
+              <small id="designSourceOut"></small>
             </div>
 
             <div class="context-card reinforcement-card" id="reinforcementCard">
@@ -247,7 +255,7 @@
     </form>
 
     <section class="flags design-notes sheet-box">
-      <h2>DESIGN NOTES / WARNINGS</h2>
+      <h2><span>Design notes</span><button type="button" id="notesHeadCount" class="notes-head-count ok">No warnings</button></h2>
       <div id="flagsList"></div>
       <div class="actions no-print">
         <button id="copyBtn">Copy summary</button>
@@ -257,6 +265,6 @@
   </main>
 
   <footer class="no-print">Spray Seal Design Calculator · Calculation + Lookups conversion · Validate against Excel before real design use.</footer>
-  <script src="app.js?v=62" type="module"></script>
+  <script src="app.js?v=64" type="module"></script>
 </body>
 </html>
