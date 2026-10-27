@@ -49,3 +49,11 @@ High stress / very heavy traffic / high heavy vehicle conditions can justify des
 S18RF for SAMI is flagged as limited TMR experience / small-scale trial until more experience is gained.
 S15R/S15RF/S18RF for WP-A is flagged as limited TMR experience and bleeding-through-asphalt risk.
 C170 in WP-A is flagged as Administrator approval required.
+
+v45 — S/S Under Asphalt treatment (TN175 Table Q5.5.4)
+Problem: a 7 mm C170 seal under asphalt (e.g. prime + seal on exposed granular patches) could only be designed as Conventional Seal, giving normal Table Q6.8 results (e.g. 0.87 L/m², 183–195 m²/m³). The existing Q5.5.4 S/S logic was never reachable because no treatment option triggered it.
+Added TN175 Single treatment "S/S Under Asphalt" with binders C170, C240, C320, M500 (BF 1.1) and C170 + 5 parts crumb rubber (MRTS11 S/S binder classes; no AMC cutback).
+Spread rate: 7 mm = 220 m²/m³; 10 mm and 14 mm = 1000–1100/ALD (normal Q6.8 rates do not apply).
+Binder minimum enforced: if calculated rate is below ≥1.0 (7 mm), ≥1.2 (10 mm), ≥1.5 (14 mm) L/m², the design binder rate is raised to the minimum and an APPLIED note shows the calculated value.
+Notes: prime required first + curing time; PMB adhesion on primed granular; aggregate must be 14/10/7 mm; S/S vs WP-A guidance (WP-A is 10/14 mm only; C170 WP-A needs Administrator approval).
+Tests: test/ss-under-asphalt.test.mjs.
