@@ -212,6 +212,21 @@ test('every note produced across all designs gets a topic other than Other', () 
   assert.deepEqual([...misses], [], `notes without a topic: ${[...misses].join(', ')}`);
 });
 
+test('4K waterproofing uses the normal S/S voids factor; SAMI keeps 0.17; TN175 WP-A keeps 0.17', () => {
+  for (const treatment of ['Interlayer Bond Waterproofing', 'Bridge Deck Waterproofing']) {
+    const r = calc(form({ spec: 'AGPT04K-26', sealDesign: treatment.startsWith('Bridge') ? 'BRIDGE' : 'WPA', treatment, binder: 'S25E', initialAadt: 700, laneSplit: 50, flIndex: 20 }));
+    assert.strictEqual(r.samiMode, false, `${treatment} must not be fixed-VF in 4K`);
+    assert.ok(r.vf > 0.18 && r.vf < 0.22, `${treatment} Vf from Figure 6.1, got ${r.vf}`);
+    assert.strictEqual(round(r.designVf, 3), round(r.vf + r.shape.va + r.vt, 3), 'VF = Vf + Va + Vt');
+    assert.strictEqual(r.agg.base, 900, '4K Table 6.8 conventional 900/ALD');
+    assert.ok(r.notes.some(n => n.field === 'Waterproofing seal design voids factor'));
+  }
+  const sami = calc(form({ spec: 'AGPT04K-26', sealDesign: 'SAMI', treatment: 'SAMI', binder: 'S25E' }));
+  assert.strictEqual(sami.samiMode, true); approx(sami.designVf, 0.17, 1e-9, '4K SAMI VF');
+  const tn = calc(form({ spec: 'TN175', sealDesign: 'WPA', treatment: 'Interlayer Bond Waterproofing', binder: 'S25E' }));
+  assert.strictEqual(tn.samiMode, true); approx(tn.designVf, 0.17, 1e-9, 'TN175 WP-A VF');
+});
+
 let passed = 0, failed = 0;
 for (const t of tests) {
   try { t.fn(); console.log(`PASS - ${t.name}`); passed++; }

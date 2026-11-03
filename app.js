@@ -192,7 +192,7 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE],
     underAsphalt: true,
     purpose: 'Waterproofing membrane seal on a bridge deck under asphalt.',
-    guidance: 'Binder from the workbook PRODUCT LIST: S25E. Designed as a fixed-VF waterproofing seal; confirm against the project specification.',
+    guidance: 'Binder from the workbook PRODUCT LIST: S25E. AGPT04K-26 mode: designed as a single/single seal (Vf + Va + Vt), since Part 4K gives the fixed VF 0.17 for SAMI only. TN175 mode: fixed VF 0.17 as for WP-A. Confirm against the project specification.',
     source: 'Workbook Lookups'
   }
 ];
@@ -528,6 +528,19 @@ function isWaterproofingFixedVfTreatment(treatment) {
 function isSamiTreatment(treatment) {
   return isWaterproofingFixedVfTreatment(treatment);
 }
+// Which treatments use the fixed design voids factor (VF = 0.17) instead of
+// Vf + Va + Vt. AGPT04K-26 gives the fixed VF for SAMI only (Section 5.5.4,
+// Equation 4); Part 4K has no separate waterproofing design, so in 4K mode a
+// waterproofing seal is designed as a normal single/single seal (Section 5.5.1).
+// TN175 Section 5.5.4 says WP-A is designed the same as a SAMI, so TN175 keeps
+// the fixed VF for waterproofing treatments.
+function usesFixedVf(spec, treatment) {
+  if (isTn175(spec)) return isSamiTreatment(treatment);
+  return norm(treatment) === 'SAMI';
+}
+function is4kWaterproofingAsSingle(spec, treatment) {
+  return !isTn175(spec) && isSamiTreatment(treatment) && norm(treatment) !== 'SAMI';
+}
 
 function isTn175WpA(treatment) {
   const tr = norm(treatment);
@@ -747,6 +760,11 @@ function buildDesignNotes(r) {
   const cutback = isCutbackBinder(r.v.binder);
   const isSecondCoat = String(r.v._secondCoat || '') === '1';
   const coatPrefix = isSecondCoat ? 'Second coat – ' : '';
+
+  if (is4kWaterproofingAsSingle(spec, r.v.treatment)) {
+    notes.push(note('APPLIED', coatPrefix + 'Waterproofing seal design voids factor', `${r.v.treatment}: Part 4K has no separate waterproofing seal design and gives the fixed VF of 0.17 for SAMI only. This seal is designed as a single/single seal: VF = Vf + Va + Vt = ${round(r.designVf,3).toFixed(3)}, with Vf from Figure 6.1/6.2, Va from Table 6.1 and Vt from Table 6.2. Aggregate spread rate from Table 6.8.`, 'AGPT04K-26 Sections 5.5.1, 5.5.4, 6.1 (Eq 5), Table 6.8'));
+    notes.push(note('CHECK', coatPrefix + 'Waterproofing seal binder factor', `Binder factor ${r.bf ?? '—'} for ${r.v.binder} comes from the workbook. Part 4K Table 6.4 has no waterproofing row; confirm the factor for this binder (Table 6.4 conventional, HSS1 or SAM rows) or the project specification.`, 'AGPT04K-26 Table 6.4'));
+  }
 
   if (r.samiMode) {
     const source = spec === 'TN175' ? 'TN175 Section 5.5.4 / Table Q5.5.4; Part 4K Equation 4' : 'AGPT04K-26 Section 5.5.4';
@@ -1215,8 +1233,9 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
     }
   }
 
-  // AGPT04K-26 aggregate spread rules from Tables 6.8, 6.11 and 6.12.
-  if (tr === 'SAMI' || tr.includes('WATERPROOFING')) {
+  // AGPT04K-26 aggregate spread rules from Tables 6.8, 6.10, 6.11 and 6.12.
+  // Table 6.10 (1000/ALD) is for SAMI only; a waterproofing seal is a S/S (Table 6.8).
+  if (tr === 'SAMI') {
     base = 1000;
   } else if (st.includes('DOUBLE 2ND')) {
     if (agg.includes('5')) return { base: 225, displayBase:'225', m2m3: 225, m2m3Min:225, m2m3Max:225, displayM2M3:'225', fixed: true, source:'AGPT04K-26 Table 6.12' };
@@ -1727,7 +1746,7 @@ function calculateCoat(v) {
   const ehvPct = Math.min(100, shvPct + (lhvPct * 3));
   const lvPct = Math.max(0, 100 - hvPct);
   const traffic = compoundTraffic(v);
-  const samiMode = isSamiTreatment(v.treatment);
+  const samiMode = usesFixedVf(v.spec, v.treatment);
   // normalDesignTraffic is the existing lane/common-path design traffic (traffic.vld),
   // unchanged. effectiveDesignTraffic is what actually feeds the Basic Voids Factor:
   // it only diverges from normalDesignTraffic when EHV > 65%.

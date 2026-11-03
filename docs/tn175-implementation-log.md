@@ -73,3 +73,10 @@ v64 — Design notes display
 - Seal design notes have specific titles (e.g. "SAM minimum binder rate").
 - Warning/check dots beside Binder used and Design traffic are clickable and jump to the note.
 - Copy/Reset buttons sit at the end of the section instead of floating over the notes.
+
+v65 — Waterproofing seal voids factor in AGPT04K-26 mode
+- Part 4K gives the fixed design voids factor (VF = 0.17) for SAMI only (Section 5.5.4, Equation 4). It has no separate waterproofing seal design.
+- In AGPT04K-26 mode, Interlayer Bond Waterproofing and Bridge Deck Waterproofing are now designed as a single/single seal: VF = Vf + Va + Vt (Figures 6.1/6.2, Table 6.1, Table 6.2, Equation 5), aggregate spread rate from Table 6.8 (900/ALD, or 800/ALD for emulsion/cutback).
+- SAMI keeps VF 0.17 and Table 6.10 spread in 4K mode.
+- TN175 mode is unchanged: TN175 Section 5.5.4 says WP-A is designed the same as SAMI (VF 0.17).
+- The waterproofing binder factor (1.3) still comes from the workbook; Part 4K Table 6.4 has no waterproofing row, so a CHECK note asks the designer to confirm it.
