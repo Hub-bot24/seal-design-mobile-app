@@ -49,3 +49,35 @@ High stress / very heavy traffic / high heavy vehicle conditions can justify des
 S18RF for SAMI is flagged as limited TMR experience / small-scale trial until more experience is gained.
 S15R/S15RF/S18RF for WP-A is flagged as limited TMR experience and bleeding-through-asphalt risk.
 C170 in WP-A is flagged as Administrator approval required.
+
+v63 — Seal design picker
+The designer now picks the SEAL DESIGN first, and the design determines the rest of the form:
+- seal type (single/single or double/double) and whether the second coat column shows
+- treatment(s) allowed for each coat
+- binders allowed for each coat (filtered from the workbook binder matrix)
+- aggregate sizes for each coat, with design defaults (and typical ALD when the size changes)
+- reinforcement systems relevant to the design (HUESKER Chipseal Grid for wearing-course seals; HaTelit / GlasGrid for under-asphalt designs; none for initial seals and bridge decks)
+Designs: S/S, D/D, HSS1, HSS2, XSS, AR, SAM S/S, SAM D/D, Initial seal S/S, Initial seal D/D, SAMI, WP-A, S/S under asphalt, Bridge deck waterproofing.
+Sources: AGPT04K-26 Tables 4.6, 4.7, 6.4, 6.5; TN175 Sections 4.5.2, 4.8, 5.5.4, Tables Q4.3.2, Q5.5.4, Q6.4, Q6.5; HUESKER Chipseal Grid installation guide.
+Rows added beside the workbook matrix (EXTRA_BINDER_ROWS): XSS (both coats, BF 1.1), unmodified emulsion D/D (60% 1.0, ≥67% 1.1), S/S under asphalt (C170/C240/C320 1.0, M500 1.1).
+New design notes: Table 4.7 traffic/EHV checks for conventional S/S and D/D, 14 mm initial seal warning, AMC7 for cutback D/D initial seals, SAM minimum 1.5 L/m², XSS performance caveat, TN175 Q4.3.2 second-coat ALD rule.
+Older saved inputs are mapped to a design from their saved seal type + treatment.
+Tests: node test/seal-design-picker.test.mjs
+
+v64 — Design notes display
+- Notes no longer sit in a 245 px scroll box; the whole list is visible.
+- "Needs your attention" shows warnings, then checks, first. A green "No warnings or checks" panel shows when there are none.
+- Applied and info notes move into a collapsible "How it was calculated" section, grouped by topic (seal design, traffic, voids factor, binder, allowances, aggregate, reinforcement).
+- Count chips (Warnings / To check / Info / Applied) filter the list; header badge shows the worst status.
+- ALL-CAPS titles are shown in sentence case; second-coat notes get a "2nd coat" tag; the source is shown as a tag.
+- Seal design notes have specific titles (e.g. "SAM minimum binder rate").
+- Warning/check dots beside Binder used and Design traffic are clickable and jump to the note.
+- Copy/Reset buttons sit at the end of the section instead of floating over the notes.
+
+v65 — Waterproofing seal voids factor in AGPT04K-26 mode
+- Part 4K gives the fixed design voids factor (VF = 0.17) for SAMI only (Section 5.5.4, Equation 4). It has no separate waterproofing seal design.
+- In AGPT04K-26 mode, Interlayer Bond Waterproofing and Bridge Deck Waterproofing are now designed as a single/single seal: VF = Vf + Va + Vt (Figures 6.1/6.2, Table 6.1, Table 6.2, Equation 5), aggregate spread rate from Table 6.8 (900/ALD, or 800/ALD for emulsion/cutback).
+- SAMI keeps VF 0.17 and Table 6.10 spread in 4K mode.
+- TN175 mode is unchanged: TN175 Section 5.5.4 says WP-A is designed the same as SAMI (VF 0.17).
+- The waterproofing binder factor (1.3) still comes from the workbook; Part 4K Table 6.4 has no waterproofing row, so a CHECK note asks the designer to confirm it.
+- v66: 4K waterproofing seals under asphalt use aggregate spread 1000/ALD to 1100/ALD (Table 6.10; Section 6.7.3 reason: lighter spread for interlock with the overlying asphalt). 4K SAMI now shows the full 1000–1100/ALD range instead of 1000/ALD only.
