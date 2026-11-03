@@ -80,3 +80,4 @@ v65 — Waterproofing seal voids factor in AGPT04K-26 mode
 - SAMI keeps VF 0.17 and Table 6.10 spread in 4K mode.
 - TN175 mode is unchanged: TN175 Section 5.5.4 says WP-A is designed the same as SAMI (VF 0.17).
 - The waterproofing binder factor (1.3) still comes from the workbook; Part 4K Table 6.4 has no waterproofing row, so a CHECK note asks the designer to confirm it.
+- v66: 4K waterproofing seals under asphalt use aggregate spread 1000/ALD to 1100/ALD (Table 6.10; Section 6.7.3 reason: lighter spread for interlock with the overlying asphalt). 4K SAMI now shows the full 1000–1100/ALD range instead of 1000/ALD only.

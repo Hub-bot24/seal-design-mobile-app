@@ -762,7 +762,7 @@ function buildDesignNotes(r) {
   const coatPrefix = isSecondCoat ? 'Second coat – ' : '';
 
   if (is4kWaterproofingAsSingle(spec, r.v.treatment)) {
-    notes.push(note('APPLIED', coatPrefix + 'Waterproofing seal design voids factor', `${r.v.treatment}: Part 4K has no separate waterproofing seal design and gives the fixed VF of 0.17 for SAMI only. This seal is designed as a single/single seal: VF = Vf + Va + Vt = ${round(r.designVf,3).toFixed(3)}, with Vf from Figure 6.1/6.2, Va from Table 6.1 and Vt from Table 6.2. Aggregate spread rate from Table 6.8.`, 'AGPT04K-26 Sections 5.5.1, 5.5.4, 6.1 (Eq 5), Table 6.8'));
+    notes.push(note('APPLIED', coatPrefix + 'Waterproofing seal design voids factor', `${r.v.treatment}: Part 4K has no separate waterproofing seal design and gives the fixed VF of 0.17 for SAMI only. This seal is designed as a single/single seal: VF = Vf + Va + Vt = ${round(r.designVf,3).toFixed(3)}, with Vf from Figure 6.1/6.2, Va from Table 6.1 and Vt from Table 6.2. Aggregate spread rate 1000/ALD to 1100/ALD from Table 6.10 (lighter spread for interlock with the overlying asphalt, Section 6.7.3).`, 'AGPT04K-26 Sections 5.5.1, 6.1 (Eq 5), 6.7.3, Table 6.10'));
     notes.push(note('CHECK', coatPrefix + 'Waterproofing seal binder factor', `Binder factor ${r.bf ?? '—'} for ${r.v.binder} comes from the workbook. Part 4K Table 6.4 has no waterproofing row; confirm the factor for this binder (Table 6.4 conventional, HSS1 or SAM rows) or the project specification.`, 'AGPT04K-26 Table 6.4'));
   }
 
@@ -1234,9 +1234,22 @@ function aggregateSpreadRate(spec, sealType, treatment, binder, ald, aggregateSi
   }
 
   // AGPT04K-26 aggregate spread rules from Tables 6.8, 6.10, 6.11 and 6.12.
-  // Table 6.10 (1000/ALD) is for SAMI only; a waterproofing seal is a S/S (Table 6.8).
-  if (tr === 'SAMI') {
-    base = 1000;
+  // Table 6.10 (1000/ALD to 1100/ALD) is listed for SAMI. Section 6.7.3 gives the
+  // reason — a lighter spread "to enable interlock between the seal and the
+  // overlying asphalt mix" — which applies equally to a waterproofing seal placed
+  // under asphalt, so those use the same range.
+  if (tr === 'SAMI' || tr.includes('WATERPROOFING')) {
+    const lo = 1000 / aldNum, hi = 1100 / aldNum;
+    const isSami = tr === 'SAMI';
+    return {
+      base: 1000, baseMin: 1000, baseMax: 1100, displayBase: '1000–1100',
+      m2m3: lo, m2m3Min: lo, m2m3Max: hi, displayM2M3: rateRangeText(lo, hi),
+      fixed: false,
+      source: isSami ? 'AGPT04K-26 Table 6.10' : 'AGPT04K-26 Section 6.7.3 / Table 6.10',
+      note: isSami
+        ? 'AGPT04K-26 Table 6.10: SAMI aggregate spread rate 1000/ALD to 1100/ALD.'
+        : 'Waterproofing seal under asphalt: spread rate 1000/ALD to 1100/ALD from Table 6.10. Part 4K lists this rate for SAMI; Section 6.7.3 gives the reason (lighter spread for interlock with the overlying asphalt), which applies to any seal placed under asphalt.'
+    };
   } else if (st.includes('DOUBLE 2ND')) {
     if (agg.includes('5')) return { base: 225, displayBase:'225', m2m3: 225, m2m3Min:225, m2m3Max:225, displayM2M3:'225', fixed: true, source:'AGPT04K-26 Table 6.12' };
     base = 900;
