@@ -74,8 +74,10 @@ const SEAL_DESIGNS = [
     aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
     reinforcement: [RF_NONE, ...RF_HUESKER],
     purpose: 'Robust two-application seal for higher traffic, small-radius curves, intersections and grades.',
-    guidance: 'Table 4.7: D/D with C170 or C240 suits higher stress or higher EHV than a S/S. Common combinations: 10/5, 10/7, 14/7, 16/7, 20/10 (TN175 also allows 14/10 and 16/10 with Table Q4.3.2 measures).',
-    source: 'AGPT04K-26 Table 4.7 / TN175 4.5.2'
+    guidance: 'Table 4.7: D/D with C170 or C240 suits higher stress or higher EHV than a S/S; C320 or M500 may suit hot climates. Second application aggregate is smaller than the first (e.g. 10/5, 10/7, 14/7).',
+    source: 'AGPT04K-26 Table 4.7',
+    guidanceTn: 'Table 4.7 applies. TN175 4.5.2: second application about half the first ALD; common combinations 10/5 or 10/7, 14/5 or 14/7, 16/7, 20/10. TMR also allows 14/10 and 16/10 with the Table Q4.3.2 measures.',
+    sourceTn: 'AGPT04K-26 Table 4.7 / TN175 Section 4.5.2'
   },
   {
     id: 'HSS1', group: 'Wearing course seals', label: 'HSS1 — High stress S/S (PMB)',
@@ -102,7 +104,9 @@ const SEAL_DESIGNS = [
     aggs: AGG_FIRST_DOUBLE, defAgg: '14mm and Greater', aggs2: AGG_SECOND_DOUBLE, defAgg2: '7mm',
     reinforcement: [RF_NONE, ...RF_HUESKER],
     purpose: 'Double/double seal with PMB in both applications for high-stress areas.',
-    guidance: 'Table 4.7: S20E, S15R or S15RF in both applications (TN175 Q6.5 also lists S15E). Seal performance may be inadequate under these conditions; dense graded asphalt may be needed.',
+    guidance: 'Table 4.7: S20E, S15R or S15RF in both applications, binder factor 1.1 (Table 6.5). Seal performance may be inadequate under these conditions; dense graded asphalt may be needed.',
+    guidanceTn: 'Table 4.7 applies. TN175 Table Q6.5: S15E, S15R, S15RF or S20E, binder factor 1.1. Seal performance may be inadequate under these conditions; dense graded asphalt may be needed.',
+    sourceTn: 'AGPT04K-26 Table 4.7 / TN175 Table Q6.5',
     source: 'AGPT04K-26 Table 4.7 / Table 6.5'
   },
   {
@@ -140,8 +144,10 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE],
     initial: true,
     purpose: 'First seal on a granular, stabilised or foamed-bitumen base in lieu of a prime and seal.',
-    guidance: 'Table 4.6 / TN175 4.8.1: AMC6 typical winter grade (AMC5 if cold and wet), AMC7 typical summer grade; HBCE (≥67%) suits cooler or damp conditions. 7 and 10 mm aggregate; 14 mm is not recommended.',
-    source: 'AGPT04K-26 Table 4.6 / TN175 4.8'
+    guidance: 'Table 4.6: AMC5, AMC6 or AMC7 cutback, or CRS67 emulsion, chosen by traffic, EHV and seasonal temperature. Section 4.8.2: 7 and 10 mm aggregate; 14 mm is not recommended for S/S initial seals.',
+    source: 'AGPT04K-26 Table 4.6 / Section 4.8',
+    guidanceTn: 'TN175 4.8.1: AMC6 typical winter grade (AMC5 if cold and wet), AMC7 typical summer grade; HBCE (≥67%) suits cooler or damp conditions. Part 4K 4.8.2: 7 and 10 mm aggregate; 14 mm is not recommended.',
+    sourceTn: 'TN175 Section 4.8 / AGPT04K-26 Section 4.8.2'
   },
   {
     id: 'INIT_DD', group: 'Initial seals', label: 'Initial seal — D/D',
@@ -151,8 +157,10 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE],
     initial: true,
     purpose: 'Initial seal built as a double/double for higher traffic or higher stress sites (corners, intersections, turning areas).',
-    guidance: 'TN175 4.8.1: use AMC7 for cutback D/D initial seals to minimise flushing; HBCE is also suitable. Common combinations 10/5, 10/7 and 14/7.',
-    source: 'AGPT04K-26 4.8.2 / TN175 4.8.1'
+    guidance: 'Table 4.6: D/D initial seals with CRS60/CRS67 emulsion, AMC6/AMC7 cutback, modified emulsion or PMB for medium to high traffic. Section 4.8.2: 10/5, 10/7 and 14/7 are common combinations.',
+    source: 'AGPT04K-26 Table 4.6 / Section 4.8.2',
+    guidanceTn: 'TN175 4.8.1: use AMC7 for cutback D/D initial seals to minimise flushing; HBCE is also suitable. Part 4K 4.8.2: 10/5, 10/7 and 14/7 are common combinations.',
+    sourceTn: 'TN175 Section 4.8.1 / AGPT04K-26 Section 4.8.2'
   },
   {
     id: 'SAMI', group: 'Under asphalt', label: 'SAMI — Strain alleviating membrane interlayer',
@@ -160,9 +168,11 @@ const SEAL_DESIGNS = [
     aggs: ['10mm', '14mm and Greater'], defAgg: '14mm and Greater',
     reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
     underAsphalt: true,
-    purpose: 'Interlayer over a cracked pavement with an existing bituminous treatment, under asphalt, to reduce reflective cracking.',
-    guidance: 'TN175 Q5.5.4: 14 or 16 mm aggregate, spread 1000–1100/ALD, spray ≥1.8 L/m² (typically 2.0–2.5; 1.5–1.8 in high shear). S25E typical, S18RF allowed. No cutter.',
-    source: 'TN175 Table Q5.5.4'
+    purpose: 'Interlayer under asphalt to alleviate strains and reduce reflective cracking.',
+    guidance: 'Section 5.5.4: fixed VF 0.17 (0.16–0.18), Bd = 0.17 × ALD × BF + allowances, minimum 1.8 L/m². Generally 10 mm; 14 mm for severe cracking or under open graded asphalt. Spread 1000/ALD–1100/ALD (Table 6.10). S25E or S18RF, BF 1.6 (Table 6.4). Overlay within 1 day (2 max), otherwise design as a SAM.',
+    source: 'AGPT04K-26 Section 5.5.4 / Tables 6.4, 6.10',
+    guidanceTn: 'TN175 Q5.5.4: 14 or 16 mm aggregate, spread 1000–1100/ALD, spray ≥1.8 L/m² (typically 2.0–2.5; 1.5–1.8 in high shear). S25E typical, S18RF allowed. BF 1.3–1.5 (Q6.4). No cutter.',
+    sourceTn: 'TN175 Table Q5.5.4 / Table Q6.4'
   },
   {
     id: 'WPA', group: 'Under asphalt', label: 'WP-A — Waterproofing seal under asphalt',
@@ -171,8 +181,10 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
     underAsphalt: true,
     purpose: 'Waterproofing seal between asphalt layers, or between an initial seal and asphalt surfacing.',
-    guidance: 'TN175 Q5.5.4: 10 or 14 mm (14 mm under SMA14), spread 1000–1100/ALD, spray ≥1.5 L/m² (10 mm) or ≥1.8 L/m² (14 mm). S20E or S25E typical; C170 only with Administrator approval. No cutter.',
-    source: 'TN175 Table Q5.5.4'
+    guidance: 'Part 4K has no separate waterproofing seal design, so it is designed as a single/single seal: VF = Vf + Va + Vt (Section 6.1, Equation 5). Spread 1000/ALD–1100/ALD (Table 6.10; Section 6.7.3 lighter spread for interlock with the overlying asphalt). Binder factor from the workbook — confirm.',
+    source: 'AGPT04K-26 Sections 5.5.1, 6.1, 6.7.3 / Table 6.10',
+    guidanceTn: 'TN175 Q5.5.4: designed as a SAMI (fixed VF 0.17). 10 or 14 mm (14 mm under SMA14), spread 1000–1100/ALD, spray ≥1.5 L/m² (10 mm) or ≥1.8 L/m² (14 mm). S20E or S25E typical; C170 only with Administrator approval. No cutter.',
+    sourceTn: 'TN175 Section 5.5.4 / Table Q5.5.4'
   },
   {
     id: 'SS_UA', group: 'Under asphalt', label: 'S/S under asphalt — waterproof primed granular',
@@ -182,8 +194,10 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE, ...RF_UNDER_ASPHALT],
     underAsphalt: true,
     purpose: 'Prime plus single/single seal to waterproof granular pavement exposed by milling or construction, before asphalt.',
-    guidance: 'TN175 Q5.5.4: 14, 10 or 7 mm. Spread 1000–1100/ALD (14 and 10 mm) or 220 m²/m³ (7 mm). Spray ≥1.0 (7 mm), ≥1.2 (10 mm), ≥1.5 L/m² (14 mm). C170 typical.',
-    source: 'TN175 Table Q5.5.4'
+    guidance: 'Part 4K has no separate method for this treatment: it is designed as a normal single/single seal (Section 5.5.1) — VF = Vf + Va + Vt, binder factor from Table 6.4, spread 900/ALD (800/ALD for emulsion or cutback) from Table 6.8.',
+    source: 'AGPT04K-26 Section 5.5.1 / Tables 6.4, 6.8',
+    guidanceTn: 'TN175 Q5.5.4: 14, 10 or 7 mm. Spread 1000–1100/ALD (14 and 10 mm) or 220 m²/m³ (7 mm). Spray ≥1.0 (7 mm), ≥1.2 (10 mm), ≥1.5 L/m² (14 mm). C170 typical.',
+    sourceTn: 'TN175 Table Q5.5.4'
   },
   {
     id: 'BRIDGE', group: 'Under asphalt', label: 'Bridge deck waterproofing',
@@ -192,8 +206,10 @@ const SEAL_DESIGNS = [
     reinforcement: [RF_NONE],
     underAsphalt: true,
     purpose: 'Waterproofing membrane seal on a bridge deck under asphalt.',
-    guidance: 'Binder from the workbook PRODUCT LIST: S25E. AGPT04K-26 mode: designed as a single/single seal (Vf + Va + Vt), since Part 4K gives the fixed VF 0.17 for SAMI only. TN175 mode: fixed VF 0.17 as for WP-A. Confirm against the project specification.',
-    source: 'Workbook Lookups'
+    guidance: 'Part 4K has no separate bridge deck waterproofing design, so it is designed as a single/single seal: VF = Vf + Va + Vt (Section 6.1). Spread 1000/ALD–1100/ALD under asphalt (Table 6.10). Bridge decks should be primed (Section 4.7). Binder S25E from the workbook. Confirm against the project specification.',
+    source: 'AGPT04K-26 Sections 4.7, 6.1, 6.7.3 / workbook Lookups',
+    guidanceTn: 'Designed like WP-A (fixed VF 0.17, TN175 Section 5.5.4). Binder S25E from the workbook. Confirm against the project specification.',
+    sourceTn: 'TN175 Section 5.5.4 / workbook Lookups'
   }
 ];
 
@@ -224,6 +240,10 @@ function sealDesignById(id) {
   return SEAL_DESIGNS.find(d => d.id === id) || null;
 }
 function defaultSealDesign() { return SEAL_DESIGNS[0]; }
+// The design card and notes show only the selected spec's guidance: Part 4K text
+// in AGPT04K-26 mode, TN175 text (where TN175 amends 4K) in TN175 mode.
+function designGuidance(design, spec) { return (isTn175(spec) && design.guidanceTn) || design.guidance; }
+function designSource(design, spec) { return (isTn175(spec) && design.sourceTn) || design.source; }
 // Older saved inputs have no sealDesign: infer one from the seal type + treatment
 // that were saved, so existing designs reopen in the right place.
 function inferSealDesign(sealType, treatment) {
@@ -423,8 +443,8 @@ function updateTreatmentAndBinderOptions(designChanged = false) {
 
   // Design summary card.
   setText('designPurposeOut', design.purpose);
-  setText('designGuidanceOut', design.guidance);
-  setText('designSourceOut', design.source);
+  setText('designGuidanceOut', designGuidance(design, spec));
+  setText('designSourceOut', designSource(design, spec));
   document.body.classList.toggle('initial-seal-design', Boolean(design.initial));
   document.body.classList.toggle('under-asphalt-design', Boolean(design.underAsphalt));
 }
@@ -810,7 +830,7 @@ function buildDesignNotes(r) {
 
   if (cutback) {
     const zeroAllowance = aba === 0 && ap === 0 ? ' Aba and Ap are currently 0, so confirm no absorption allowance is required.' : '';
-    notes.push(note('CHECK', coatPrefix + 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4; TN175 Sections 4.8 and 4.8.1 where applicable'));
+    notes.push(note('CHECK', coatPrefix + 'Cutback binder / AMC', `${r.v.binder} selected. Consider whether +0.1 L/m² is required for binder absorption/porous pavement conditions. For initial seals on granular/unbound or porous pavement, pavement absorption commonly sits in the +0.1 to +0.2 L/m² check range. Do not add it blindly; enter the allowance in Ap or Aba only when the pavement/aggregate condition justifies it.${zeroAllowance} Confirm cutter oil proportion suits the surface and conditions.`, spec === 'TN175' ? 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4; TN175 Sections 4.8 and 4.8.1' : 'AGPT04K-26 Table 4.6 Note 2 / Section 6.2.4'));
   }
 
   if (!Number.isFinite(ald) || ald <= 0) {
@@ -1873,7 +1893,7 @@ function buildSealDesignNotes(r) {
   const coats = s2
     ? `first coat ${r.v.treatment} / ${r.v.binder} / ${r.v.aggregateSize}, second coat ${s2.v.treatment} / ${s2.v.binder} / ${s2.v.aggregateSize}`
     : `${r.v.treatment} / ${r.v.binder} / ${r.v.aggregateSize}`;
-  notes.push(note('APPLIED', 'Seal design selected', `${design.label} selected → ${design.type === 'Double' ? 'double/double' : 'single/single'} (${coats}). Treatment, binder, aggregate and reinforcement lists are limited to those that suit this design.`, design.source));
+  notes.push(note('APPLIED', 'Seal design selected', `${design.label} selected → ${design.type === 'Double' ? 'double/double' : 'single/single'} (${coats}). Treatment, binder, aggregate and reinforcement lists are limited to those that suit this design.`, designSource(design, r.v.spec)));
 
   const vld = asNum(r.effectiveDesignTraffic, 0);
   const id = design.id;
@@ -1887,11 +1907,11 @@ function buildSealDesignNotes(r) {
     if (aggregateSizeClass(r.v.aggregateSize) === '14_PLUS') notes.push(note('WARNING', 'Initial seal aggregate size', '14 mm aggregate is not recommended for single/single initial seals and is not recommended for high-traffic applications. Use 7 or 10 mm unless there is a special requirement.', 'AGPT04K-26 Section 4.8.2'));
     if (vld > 2000) notes.push(note('CHECK', 'Initial seal type vs design traffic', `Design traffic is ${round(vld,0)} v/l/d. For high traffic, Table 4.6 mostly lists D/D initial seals; consider an Initial seal — D/D.`, 'AGPT04K-26 Table 4.6'));
   }
-  if (id === 'INIT_DD') {
+  if (id === 'INIT_DD' && isTn175(r.v.spec)) {
     const cutbacks = [r.v.binder, s2?.v.binder].filter(b => ['AMC5', 'AMC6'].includes(norm(b)));
     if (cutbacks.length) notes.push(note('CHECK', 'Cutback grade for D/D initial seal', `${[...new Set(cutbacks)].join(', ')} selected for a cutback D/D initial seal. TN175 recommends AMC7 for cutback D/D initial seals to minimise flushing risk.`, 'TN175 Section 4.8.1'));
   }
-  if (design.initial && [r.v.binder, s2?.v.binder].some(b => norm(b).includes('EMULSION'))) {
+  if (design.initial && isTn175(r.v.spec) && [r.v.binder, s2?.v.binder].some(b => norm(b).includes('EMULSION'))) {
     notes.push(note('INFO', 'Emulsion initial seal conditions', 'Emulsion initial seal: not recommended when pavement surface temperature is outside 10–50 °C during construction, breaking and curing. Verify emulsion compatibility with the pavement material and aggregate.', 'TN175 Section 4.8.1'));
   }
   if (id === 'SAM_SS' || id === 'SAM_DD') {
@@ -1907,10 +1927,10 @@ function buildSealDesignNotes(r) {
   if (id === 'SAMI' && isTn175(r.v.spec) && aggregateSizeClass(r.v.aggregateSize) === '10') {
     notes.push(note('CHECK', 'SAMI aggregate size', 'TMR typically uses 14 mm (not 10 mm) aggregate for SAMI seals to allow higher binder rates for reflective-crack resistance.', 'TN175 Section 5.5.4'));
   }
-  if (id === 'WPA') {
+  if (id === 'WPA' && isTn175(r.v.spec)) {
     notes.push(note('INFO', 'WP-A under SMA14', '14 mm aggregate must be used for WP-A under SMA14.', 'TN175 Table Q5.5.4'));
   }
-  if (s2) {
+  if (s2 && isTn175(r.v.spec)) {
     const ald1 = asNum(r.ald, 0);
     const ald2 = asNum(s2.ald, 0);
     if (ald1 > 0 && ald2 > ald1 / 2) {
