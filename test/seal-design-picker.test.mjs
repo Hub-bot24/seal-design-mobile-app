@@ -228,6 +228,32 @@ test('4K waterproofing uses the normal S/S voids factor; SAMI keeps 0.17; TN175 
   assert.strictEqual(tn.samiMode, true); approx(tn.designVf, 0.17, 1e-9, 'TN175 WP-A VF');
 });
 
+test('AGPT04K-26 mode shows no TN175/TMR text in the design card or notes, for every design and binder', () => {
+  const leaks = [];
+  const designs = JSON.parse(run('JSON.stringify(SEAL_DESIGNS)'));
+  for (const d of designs) {
+    const card = JSON.parse(run(`JSON.stringify([designGuidance(sealDesignById(${J(d.id)}), 'AGPT04K-26'), designSource(sealDesignById(${J(d.id)}), 'AGPT04K-26')])`));
+    if (/TN175|TMR/.test(card.join(' '))) leaks.push(`card ${d.id}`);
+    const type = d.type === 'Double' ? 'Double 1st Coat' : 'Single';
+    for (const t of treatments('AGPT04K-26', type, d.id, 1)) {
+      for (const b of binders('AGPT04K-26', type, t, d.id, 1)) {
+        for (const [aadt, shv, ald, ald2] of [[700, 0, 5.7, 3.8], [9000, 30, 8.4, 4.9]]) {
+          const r = calc(form({ spec: 'AGPT04K-26', sealDesign: d.id, sealType: d.type === 'Double' ? 'Double Seal' : 'Single Seal', treatment: t, binder: b, treatment2: t, binder2: b, aggregateSize: d.defAgg, aldMirror: ald, aggregateSize2: d.defAgg2 || '7mm', aldMirror2: ald2, initialAadt: aadt, shvPct: shv }));
+          for (const n of r.notes) if (/TN175|TMR/.test(`${n.source} ${n.message}`)) leaks.push(`${d.id}/${t}/${b}: ${n.field}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual([...new Set(leaks)], []);
+});
+
+test('TN175 mode still shows TN175 guidance where TN175 amends 4K', () => {
+  for (const id of ['WPA', 'SAMI', 'SS_UA', 'INIT_DD']) {
+    const g = JSON.parse(run(`JSON.stringify(designSource(sealDesignById(${J(id)}), 'TN175'))`));
+    assert.match(g, /TN175/, id);
+  }
+});
+
 let passed = 0, failed = 0;
 for (const t of tests) {
   try { t.fn(); console.log(`PASS - ${t.name}`); passed++; }

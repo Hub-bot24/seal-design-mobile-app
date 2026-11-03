@@ -81,3 +81,8 @@ v65 — Waterproofing seal voids factor in AGPT04K-26 mode
 - TN175 mode is unchanged: TN175 Section 5.5.4 says WP-A is designed the same as SAMI (VF 0.17).
 - The waterproofing binder factor (1.3) still comes from the workbook; Part 4K Table 6.4 has no waterproofing row, so a CHECK note asks the designer to confirm it.
 - v66: 4K waterproofing seals under asphalt use aggregate spread 1000/ALD to 1100/ALD (Table 6.10; Section 6.7.3 reason: lighter spread for interlock with the overlying asphalt). 4K SAMI now shows the full 1000–1100/ALD range instead of 1000/ALD only.
+
+v67 — Spec-specific design guidance
+- The "Selected seal design" card now shows Part 4K guidance in AGPT04K-26 mode and TN175 guidance in TN175 mode (guidance/source vs guidanceTn/sourceTn per design). Previously WP-A, SAMI, S/S under asphalt, initial seals and D/D showed TN175 text in 4K mode.
+- TN175-only design notes are now shown only in TN175 mode: WP-A under SMA14, AMC7 for cutback D/D initial seals, emulsion initial seal 10–50 °C, second-coat ALD rule (Q4.3.2). The cutback note no longer cites TN175 in 4K mode.
+- Test: AGPT04K-26 mode shows no TN175/TMR text in the card or notes for any design and binder.
