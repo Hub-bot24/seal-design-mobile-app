@@ -242,8 +242,11 @@ function sealDesignById(id) {
 function defaultSealDesign() { return SEAL_DESIGNS[0]; }
 // The design card and notes show only the selected spec's guidance: Part 4K text
 // in AGPT04K-26 mode, TN175 text (where TN175 amends 4K) in TN175 mode.
-function designGuidance(design, spec) { return (isTn175(spec) && design.guidanceTn) || design.guidance; }
-function designSource(design, spec) { return (isTn175(spec) && design.sourceTn) || design.source; }
+function designGuidance(design, spec) {
+  if (is395k(spec)) return `${design.guidance} Rates for this design are calculated to TfNSW Form 395K.`;
+  return (isTn175(spec) && design.guidanceTn) || design.guidance;
+}
+function designSource(design, spec) { if (is395k(spec)) return `${design.source} / TfNSW Form 395K`; return (isTn175(spec) && design.sourceTn) || design.source; }
 // Older saved inputs have no sealDesign: infer one from the seal type + treatment
 // that were saved, so existing designs reopen in the right place.
 function inferSealDesign(sealType, treatment) {
@@ -337,13 +340,16 @@ function binderRowsForSpec(spec) {
     .map(r => ({ BF_Type: r.type, BF_Treatment: r.treatment, BF_Binder: r.binder, BF_Result: r.bf }));
 }
 function populateOptions() {
-  const specs = ['AGPT04K-26', 'TN175'];
+  const specs = ['AGPT04K-26', 'TN175', SPEC_395K];
   const aggSizes = aggregateSizeOptions();
   const surfaces = uniqueRows('LookupsTbl','A (Agg Size 1)');
   setOptions($('[name="spec"]'), specs, 'TN175');
   setOptions($('[name="aggregateSize"]'), aggSizes, '10mm');
   setOptions($('[name="aggregateSize2"]'), aggSizes, '7mm');
   setOptions($('[name="surfaceType"]'), surfaces, 'N/A');
+  setOptions($('[name="nsw395Surface"]'), nsw395SurfaceOptions(), 'Unsealed granular base (designer AT)');
+  setOptions($('[name="nsw395Shape"]'), NSW395_SHAPES, 'Crushed – Angular');
+  setOptions($('[name="nsw395Shape2"]'), NSW395_SHAPES, 'Crushed – Angular');
   populateSealDesignOptions();
   updateTreatmentAndBinderOptions();
 }
@@ -767,6 +773,7 @@ function tn175BinderFactorSource(sealType) {
   return isDoubleFirst(sealType) ? 'TN175 Table Q6.5' : 'TN175 Table Q6.4';
 }
 function buildDesignNotes(r) {
+  if (is395k(r.v.spec)) return build395kNotes(r);
   const notes = [];
   const spec = norm(r.v.spec);
   const fi = asNum(r.v.flIndex, NaN);
@@ -1767,12 +1774,360 @@ function buildHatelitNotes(r) {
 // conversion, and it always starts from normalDesignTraffic — never from a value
 // that has already been converted — so repeated recalculation can never convert it
 // twice.
+// ---------------------------------------------------------------------------
+// TfNSW FORM 395K (01/2014) — NSW seal / reseal design method (v68)
+// Third SPEC option beside AGPT04K-26 and TN175. 395K is a self-contained method
+// (Austroads 2009 based), so when SPEC = 395K the whole coat calculation runs
+// through calculateCoat395k() and its own notes; nothing here touches the
+// 4K or TN175 paths. Tables are transcribed from the Form 395K PDF (Tables 1A–12,
+// Figures 1A/1B/2). Treatment, binder and aggregate option lists still come from
+// the AGPT04K-26 binder matrix.
+// ---------------------------------------------------------------------------
+const SPEC_395K = '395K';
+function is395k(spec) { return norm(spec) === SPEC_395K; }
+
+const NSW395_SHAPES = ['Crushed – Flaky', 'Crushed – Angular', 'Crushed – Cubic', 'Partly Crushed – Rounded', 'Not Crushed – Rounded'];
+const NSW395_VA = { 'CRUSHED – FLAKY': -0.01, 'CRUSHED – ANGULAR': 0, 'CRUSHED – CUBIC': 0.01, 'PARTLY CRUSHED – ROUNDED': 0.005, 'NOT CRUSHED – ROUNDED': 0.01 };
+
+// Tables 11A–11E (other surfaces) plus an unsealed-base row with a designer AT.
+const NSW395_OTHER_SURFACES = {
+  'Prime – hard, smooth and black': { at: 0.0, table: '11A', base: 'PRIMED' },
+  'Prime – hard, smooth and brown': { at: 0.1, table: '11A', base: 'PRIMED' },
+  'Prime – hard, hungry and brown': { at: 0.2, table: '11A', base: 'PRIMED' },
+  'DGA 0–2 years': { dga: [-0.1, 0.0], table: '11B', base: 'SEALED' },
+  'DGA 2–5 years': { dga: [0.0, 0.1], table: '11B', base: 'SEALED' },
+  'DGA > 5 years': { dga: [0.1, 0.2], table: '11B', base: 'SEALED' },
+  'Primed concrete – hard and black': { at: 0.2, table: '11C', base: 'PRIMED' },
+  'Primed concrete – hard and brown': { at: 0.3, table: '11C', base: 'PRIMED' },
+  'Primed timber deck – hard and black': { at: 0.2, table: '11D', base: 'PRIMED' },
+  'Primed timber deck – hard and brown': { at: 0.3, table: '11D', base: 'PRIMED' },
+  'Slurry ≤ 12 months, ≤ 10 mm thick': { at: 0.0, table: '11E', base: 'SEALED' },
+  'Slurry ≤ 12 months, > 10 mm thick': { at: 0.0, table: '11E', base: 'SEALED' },
+  'Slurry > 12 months, ≤ 10 mm thick': { at: 0.1, table: '11E', base: 'SEALED' },
+  'Slurry > 12 months, > 10 mm thick': { at: 0.2, table: '11E', base: 'SEALED' },
+  'Unsealed granular base (designer AT)': { designer: true, table: '—', base: 'UNSEALED' }
+};
+const NSW395_SEAL_SIZES = [5, 7, 10, 14, 20];
+function nsw395SurfaceOptions() {
+  return [
+    ...NSW395_SEAL_SIZES.map(s => `Existing seal / primerseal – ${s} mm`),
+    ...Object.keys(NSW395_OTHER_SURFACES)
+  ];
+}
+
+// Table 8: [lower bound of texture band (mid-gap), condition, range text, [5, 7, 10, 14 mm proposed]]
+// String values are the form's notes: A = not recommended, B = specialised
+// treatments necessary, C = consider alternative treatments.
+const NSW395_T8 = {
+  5:  [[0,'Bleeding','< 0.4',['A',-0.2,-0.2,-0.2]],[0.4,'Flushed','0.4–0.7',['A',-0.1,0,0]],[0.75,'Smooth','0.8–0.9',[0,0,0,0]],[0.95,'Matt','1.0–1.2',[0,0.1,0.1,0.1]],[1.25,'Hungry','1.3–1.8',[0.2,0.2,0.2,0.2]],[1.81,'Very hungry','> 1.8',[0.3,0.3,0.3,0.3]]],
+  7:  [[0,'Bleeding','< 0.4',['A',-0.2,-0.2,-0.2]],[0.4,'Flushed','0.4–0.7',[-0.1,-0.1,-0.1,0]],[0.75,'Smooth','0.8–1.1',[0,0,0,0]],[1.15,'Matt','1.2–1.5',[0,0.1,0.2,0.2]],[1.55,'Hungry','1.6–2.0',[0.2,0.2,0.3,0.3]],[2.01,'Very hungry','> 2.0',[0.3,0.4,0.4,0.4]]],
+  10: [[0,'Bleeding','< 0.4',['A',-0.2,-0.2,-0.2]],[0.4,'Flushed','0.4–0.7',[-0.1,-0.1,-0.1,0]],[0.75,'Smooth','0.8–1.2',[0,0,0.1,0.2]],[1.25,'Matt','1.3–1.7',[0.1,0.2,0.3,'0.4A']],[1.75,'Hungry','1.8–2.2',[0.2,0.3,'0.4A','C']],[2.21,'Very hungry','> 2.2',[0.3,0.4,'C','C']]],
+  14: [[0,'Bleeding','< 0.4',['B','A',-0.3,-0.3]],[0.4,'Flushed','0.4–0.7',['A',-0.1,-0.1,-0.1]],[0.75,'Smooth','0.8–1.3',[0,0,0.1,0.2]],[1.35,'Matt','1.4–2.2',[0.1,0.2,'0.4A','0.4A']],[2.25,'Hungry','2.3–3.2',[0.2,0.3,'C','C']],[3.21,'Very hungry','> 3.2',[0.3,0.4,'C','C']]],
+  20: [[0,'Bleeding','< 0.4',['B','A',-0.3,-0.3]],[0.4,'Flushed','0.4–0.7',['B',-0.1,-0.1,-0.1]],[0.75,'Smooth','0.8–1.4',[0,0,0.1,0.2]],[1.45,'Matt','1.5–2.4',[0.1,0.2,'0.4A','0.4A']],[2.45,'Hungry','2.5–3.5',[0.2,0.3,'C','C']],[3.51,'Very hungry','> 3.5',[0.3,0.4,'C','C']]]
+};
+const NSW395_T8_NOTES = { A: 'not recommended', B: 'specialised treatments necessary', C: 'consider alternative treatments (e.g. enrichment, small size seal)' };
+
+// Tables 7A–7D: PMB factor by application.
+const NSW395_PF = {
+  HSS:  { S35E: 1.05, '10% SCRAP RUBBER': 1.10, S45R: 1.15 },
+  SAM:  { S15E: 1.25, S20E: 1.30, S45R: 1.40, S15RF: 1.40, S55R: 1.70, S20RF: 1.70 },
+  SAMI: { S55R: 1.80, S20RF: 1.80, '25% SCRAP RUBBER': 2.00 },
+  GRS:  { S15E: 1.25, S20E: 1.30, S45R: 1.40, S15RF: 1.40, S55R: 1.70, S20RF: 1.70 }
+};
+
+// Figure 2 boundary lines (traffic v/l/d at which AE steps to the next value),
+// read from the chart at 0.5 mm ball-penetration steps. Infinity = line not
+// reached on the printed chart (0–5,000 v/l/d).
+const NSW395_F2 = [
+  [1.0, 1270, 2530, Infinity], [1.5, 940, 2100, Infinity], [2.0, 720, 1750, 4050],
+  [2.5, 540, 1480, 3000], [3.0, 420, 1250, 2470], [3.5, 340, 1110, 2150], [4.0, 280, 1000, 1880]
+];
+
+function nsw395AggNominal(aggregateSize) {
+  const a = norm(aggregateSize);
+  if (a.includes('14')) return 14;
+  if (a.includes('10')) return 10;
+  if (a.includes('7')) return 7;
+  if (a.includes('5')) return 5;
+  return NaN;
+}
+function nsw395BinderCategory(binder) {
+  const b = norm(binder);
+  if (b.startsWith('EMULSION')) return 'Emulsion';
+  if (CUTBACK_BINDERS.some(c => norm(c) === b)) return 'Cutback';
+  if (CONVENTIONAL_BITUMEN.some(c => norm(c) === b)) return 'Conventional';
+  if (/^S\d/.test(b) || b.includes('PMB') || b.includes('SCRAP')) return 'PMB';
+  return 'Conventional';
+}
+function nsw395IsShoulder(designArea) {
+  const a = norm(designArea);
+  return a.includes('SHOULDER') || a.includes('MEDIAN');
+}
+// Figures 1A/1B mid-line. Fitted to the printed curve: 10 v/l/d ≈ 0.285,
+// 100 ≈ 0.213, 500 ≈ 0.173, 1,500 ≈ 0.150, 10,000 ≈ 0.119. The 395K chart is
+// NOT flat below 100 v/l/d (it rises to ~0.285 at 10 v/l/d).
+function nsw395BasicVf(vld) {
+  const v = Math.max(asNum(vld, 0), 10);
+  return round(v <= 500 ? 0.388 * Math.pow(v, -0.1304) : 0.3687 * Math.pow(v, -0.1226), 3);
+}
+// Approximate dashed limits on Figures 1A/1B, as multiples of the mid-line.
+function nsw395VfLimits(vld) {
+  const mid = nsw395BasicVf(vld);
+  const v = Math.max(asNum(vld, 0), 10);
+  const lv = Math.log10(Math.min(Math.max(v, 100), 10000));
+  const stripRatio = 0.89 - (lv - 2) / 2 * (0.89 - 0.77);
+  return { bleed: round(mid * 1.10, 3), strip: round(mid * stripRatio, 3) };
+}
+// Table 3B.
+function nsw395TrafficAdjustment(ehvPct, gradient, braking) {
+  const ehv = asNum(ehvPct, 0);
+  const climbing = norm(gradient).includes('CLIMBING');
+  const chan = norm(braking) === 'YES';
+  const band = ehv <= 15 ? 0 : ehv <= 25 ? 1 : ehv <= 45 ? 2 : 3;
+  const flat = [[0, -0.01], [-0.01, -0.02], [-0.02, -0.03], [-0.03, -0.04]];
+  const climb = [[-0.01, -0.02], [-0.02, -0.03], [-0.03, -0.04], [-0.04, -0.05]];
+  return (climbing ? climb : flat)[band][chan ? 1 : 0];
+}
+// Table 5 (D/D 1st layer only).
+function nsw395Vm(vld, isFirstDouble) {
+  if (!isFirstDouble) return 1;
+  const v = asNum(vld, 0);
+  if (v < 500) return 0.75;
+  if (v <= 1000) return 0.80;
+  if (v <= 2000) return 0.85;
+  return 0.90;
+}
+// Tables 8 and 11A–11E.
+function nsw395SurfaceTexture(v, vld) {
+  const surface = String(v.nsw395Surface || '');
+  const td = asNum(v.surfaceTexture, NaN);
+  const seal = surface.match(/–\s*(\d+)\s*mm$/);
+  if (seal && surface.startsWith('Existing seal')) {
+    const es = Number(seal[1]);
+    const proposed = nsw395AggNominal(v.aggregateSize);
+    const col = proposed >= 14 ? 3 : proposed >= 10 ? 2 : proposed >= 7 ? 1 : 0;
+    if (!Number.isFinite(td)) return { value: null, numeric: 0, display: 'NO T240', note: 'No texture depth (RMS T240) entered — AT set to 0 until measured.', source: 'Form 395K Table 8', level: 'WARNING' };
+    const rows = NSW395_T8[es];
+    let row = rows[0];
+    rows.forEach(r => { if (td >= r[0]) row = r; });
+    const raw = row[3][col];
+    const label = `${es} mm existing, ${row[1]} (${row[2]} mm), proposed ${[5,7,10,14][col]} mm`;
+    if (typeof raw === 'number') return { value: raw, numeric: raw, display: String(raw), note: `Table 8: ${label} → AT ${raw >= 0 ? '+' : ''}${raw} L/m².`, source: 'Form 395K Table 8', level: 'APPLIED' };
+    if (raw === '0.4A') return { value: raw, numeric: 0.4, display: '+0.4 A', note: `Table 8: ${label} → +0.4 L/m², marked A (not recommended).`, source: 'Form 395K Table 8', level: 'WARNING' };
+    return { value: raw, numeric: 0, display: raw, note: `Table 8: ${label} → note ${raw}: ${NSW395_T8_NOTES[raw]}. AT set to 0; do not adopt this treatment without review.`, source: 'Form 395K Table 8', level: 'WARNING' };
+  }
+  const other = NSW395_OTHER_SURFACES[surface];
+  if (!other) return { value: null, numeric: 0, display: 'CHECK', note: 'Select the existing surface for Form 395K.', source: 'Form 395K Tables 8 / 11', level: 'WARNING' };
+  if (other.designer) {
+    const at = allowanceNum(v.nsw395UnsealedAt);
+    return { value: at, numeric: at, display: String(at), note: `Unsealed granular base: Form 395K has no AT table for an unprimed base. Designer AT ${at} L/m² adopted.`, source: 'Designer entry (no 395K table)', level: 'CHECK' };
+  }
+  if (other.dga) {
+    const at = asNum(vld, 0) > 750 ? other.dga[0] : other.dga[1];
+    return { value: at, numeric: at, display: String(at), note: `Table 11B: ${surface}, ${asNum(vld,0) > 750 ? '> 750' : '≤ 750'} v/l/d → AT ${at} L/m² (dense graded asphalt only).`, source: 'Form 395K Table 11B', level: 'APPLIED' };
+  }
+  return { value: other.at, numeric: other.at, display: String(other.at), note: `Table ${other.table}: ${surface} → AT ${other.at} L/m².`, source: `Form 395K Table ${other.table}`, level: 'APPLIED' };
+}
+function nsw395BaseType(surface) {
+  if (String(surface || '').startsWith('Existing seal')) return 'SEALED';
+  return NSW395_OTHER_SURFACES[surface]?.base || 'SEALED';
+}
+// Figure 2 — seals only.
+function nsw395Embedment(v, vld) {
+  if (norm(v.nsw395SealOrReseal) === 'RESEAL') return { value: 0, numeric: 0, display: 'N/A', note: 'Reseal: Figure 2 embedment allowance applies to seals only.' };
+  const raw = String(v.ballpin ?? '').trim();
+  const bp = asNum(raw, NaN);
+  if (raw === '' || !Number.isFinite(bp)) return { value: 0, numeric: 0, display: '0', note: 'No ball penetration (RMS T271) entered — AE = 0.' };
+  if (bp > 4) return { value: 'NOTE', numeric: 0, display: 'NOTE', note: `Ball penetration ${bp} mm is beyond Figure 2 (max 4 mm). Surface too soft for a normal design — consider alternative treatment (e.g. armour coat).` };
+  const b = Math.min(Math.max(bp, 1), 4);
+  let i = NSW395_F2.findIndex((r, k) => k === NSW395_F2.length - 1 || (b >= r[0] && b < NSW395_F2[k + 1][0]));
+  if (i >= NSW395_F2.length - 1) i = NSW395_F2.length - 2;
+  const lo = NSW395_F2[i], hi = NSW395_F2[i + 1];
+  const t = (b - lo[0]) / (hi[0] - lo[0]);
+  const thr = [1, 2, 3].map(j => (!Number.isFinite(lo[j]) || !Number.isFinite(hi[j])) ? Infinity : lo[j] + t * (hi[j] - lo[j]));
+  const traffic = asNum(vld, 0);
+  const ae = traffic < thr[0] ? 0 : traffic < thr[1] ? -0.1 : traffic < thr[2] ? -0.2 : -0.3;
+  const extra = ae === -0.3 ? ' Figure 2 note: where AE = −0.3 L/m², consider alternative treatments (e.g. armour coating).' : '';
+  return { value: ae, numeric: ae, display: String(ae), note: `Figure 2: ball penetration ${bp} mm at ${round(traffic,0)} v/l/d → AE ${ae} L/m².${bp < 1 ? ' (Below 1 mm read as 1 mm.)' : ''}${extra}` };
+}
+// Table 9.
+function nsw395Aba(absPct, manual) {
+  const raw = String(absPct ?? '').trim();
+  const a = asNum(raw, NaN);
+  if (raw === '' || !Number.isFinite(a)) return { aba: allowanceNum(manual), fromTable: false, note: 'Aggregate absorption % not entered — designer ABA value used.' };
+  if (a < 1) return { aba: 0, fromTable: true, note: `Table 9: absorption ${a}% (< 1%) → ABA = 0.0 L/m².` };
+  if (a <= 3) { const aba = round(0.1 * a, 2); return { aba, fromTable: true, note: `Table 9: absorption ${a}% (1–3%) → ABA = ${aba} L/m² (0.1–0.3 range, 0.1 per %).` }; }
+  return { aba: 0.3, fromTable: true, warn: true, note: `Table 9: absorption ${a}% (> 3%) → not recommended unless field performance is proven. ABA capped at 0.3 L/m².` };
+}
+// Tables 6 and 7A–7D. Returns { ef, pf, category, formula, source, fallback }.
+function nsw395Factors(v, sealType) {
+  const category = nsw395BinderCategory(v.binder);
+  const b = norm(v.binder);
+  const tr = norm(v.treatment);
+  let ef = 1, pf = 1, source = 'Form 395K — conventional seal (no factor)', fallback = false, formula = 'Conventional';
+  if (category === 'Emulsion') {
+    ef = b.includes('67') ? 1.1 : 1.0;
+    formula = 'Emulsion';
+    source = 'Form 395K Table 6';
+  }
+  if (tr.includes('MODIFIED EMULSION')) { ef = 1.0; formula = 'Emulsion'; source = 'Form 395K Table 6 (PME)'; }
+  if (category === 'PMB' || tr.includes('MODIFIED EMULSION')) {
+    const app = tr.includes('SAMI') ? 'SAMI' : (/\bSAM\b/.test(tr) ? 'SAM' : (tr.includes('GRS') || tr.includes('GEOTEXTILE') ? 'GRS' : 'HSS'));
+    const hit = NSW395_PF[app]?.[b];
+    if (hit) { pf = hit; source = `Form 395K Table ${{ HSS: '7A', SAM: '7B', SAMI: '7C', GRS: '7D' }[app]}`; }
+    else {
+      const bf4k = binderFactor('AGPT04K-26', sealType, v.treatment, v.binder);
+      pf = bf4k || 1; fallback = true; source = `${v.binder} is not in Form 395K Table ${{ HSS: '7A', SAM: '7B', SAMI: '7C', GRS: '7D' }[app]} — AGPT04K-26 binder factor used`;
+    }
+    if (formula !== 'Emulsion') formula = 'PMB';
+  }
+  return { ef, pf, category, formula, source, fallback };
+}
+// Tables 1A, 1B and 2.
+function nsw395AggregateSpread(v, sealType, ald, vld) {
+  const st = norm(uiSealTypeToLookupType(sealType));
+  const isFirstDouble = st.includes('DOUBLE 1ST');
+  const isSecond = st.includes('DOUBLE 2ND');
+  const nominal = nsw395AggNominal(v.aggregateSize);
+  const I = isFirstDouble ? 1.1 : 1.0;
+  const limitChoice = norm(isSecond ? v.nsw395Limit2 : v.nsw395Limit) || 'AUTO';
+  if (nominal === 5 || nominal === 7) {
+    const lo = 170 * I, hi = 200 * I;
+    return { base: 170, baseMin: 170, baseMax: 200, displayBase: `170–200 × ${I}`, m2m3: (lo + hi) / 2, m2m3Min: lo, m2m3Max: hi, displayM2M3: rateRangeText(lo, hi), fixed: true, I, source: 'Form 395K Table 1B / Table 2', note: `Table 1B: ${nominal} mm seal/reseal 170–200 m²/m³ (no ALD), × I = ${I}.` };
+  }
+  const aldNum = Math.max(asNum(ald, 0), 0.1);
+  const size = nominal >= 14 ? 14 : 10;
+  const cat = nsw395BinderCategory(v.binder);
+  const [lo, hi] = cat === 'Conventional' || cat === 'Cutback' ? (size === 10 ? [800, 850] : [850, 900]) : [750, 800];
+  const ratio = aldNum / size;
+  const shoulder = nsw395IsShoulder(v.designArea);
+  let limit, why;
+  if (limitChoice === 'LOWER') { limit = lo; why = 'lower limit selected'; }
+  else if (limitChoice === 'UPPER') { limit = hi; why = 'upper limit selected'; }
+  else if (shoulder) { limit = 800; why = 'Table 1A Note 1: shoulder → 800/ALD'; }
+  else if (asNum(vld, 0) > 750) { limit = 800; why = 'Table 1A Note 2: traffic > 750 v/l/d → 800/ALD'; }
+  else if (ratio >= 0.6) { limit = lo; why = `ALD/nominal ${round(ratio,2)} ≥ 0.6 → lower limit (guide note)`; }
+  else { limit = hi; why = `ALD/nominal ${round(ratio,2)} < 0.6 → upper limit (guide note)`; }
+  const F = Math.floor(limit / aldNum);
+  const H = Math.round(F * I);
+  const guide = shoulder ? 800 : asNum(vld, 0) > 750 ? 800 : ratio >= 0.6 ? lo : hi;
+  return { base: limit, baseMin: limit, baseMax: limit, displayBase: `${F} × ${I}`, m2m3: H, m2m3Min: H, m2m3Max: H, displayM2M3: String(H), fixed: false, I, F, limit, guideLimit: guide, category: cat, ratio, source: 'Form 395K Table 1A / Table 2',
+    note: `Table 1A (${cat === 'Cutback' ? 'cutback treated as conventional' : cat}, ${size} mm, range ${lo}–${hi}/ALD): ${why}. F = ${limit}/${aldNum} = ${F} (rounded down), × I ${I} = ${H} m²/m³.` };
+}
+
+function calculateCoat395k(v) {
+  const shvPct = Math.max(0, asNum(v.shvPct));
+  const lhvPct = Math.max(0, asNum(v.lhvPct));
+  const hvPct = Math.min(100, shvPct + lhvPct);
+  const ehvPct = Math.min(100, shvPct + (lhvPct * 3));
+  const lvPct = Math.max(0, 100 - hvPct);
+  const traffic = compoundTraffic(v);
+  const vld = traffic.vld;
+  const isSecond = String(v._secondCoat || '') === '1';
+  const st = norm(uiSealTypeToLookupType(v.sealType));
+  const isFirstDouble = st.includes('DOUBLE 1ST');
+  const shoulder = nsw395IsShoulder(v.designArea);
+  const shapeName = (isSecond ? v.nsw395Shape2 : v.nsw395Shape) || 'Crushed – Angular';
+  const va = NSW395_VA[norm(shapeName)] ?? 0;
+  const vfMid = nsw395BasicVf(vld);
+  const roundedOrCubic = /ROUNDED|CUBIC/.test(norm(shapeName));
+  const vfReadRaw = String(v.nsw395VfRead ?? '').trim();
+  const vfRead = asNum(vfReadRaw, NaN);
+  const vfFromReading = !shoulder && vfReadRaw !== '' && Number.isFinite(vfRead) && vfRead > 0;
+  const vf = shoulder ? (roundedOrCubic ? 0.23 : 0.21) : (vfFromReading ? vfRead : vfMid);
+  const vt = shoulder ? 0 : nsw395TrafficAdjustment(ehvPct, v.gradient, v.braking);
+  const vaUsed = shoulder ? 0 : va;
+  const otherAdjustment = allowanceNum(v.otherAdjustment);
+  const vm = nsw395Vm(vld, isFirstDouble);
+  const designVf = round((vf + vaUsed + vt + otherAdjustment) * vm, 2);
+  const ald = asNum(v.aldMirror, 0);
+  const baseBinder = round(designVf * ald, 2);
+  const factors = nsw395Factors(v, v.sealType);
+  const factor = factors.formula === 'Emulsion' ? factors.ef * factors.pf : factors.formula === 'PMB' ? factors.pf : 1;
+  const modifiedBinder = baseBinder * factor;
+  const hueskerMode = !isSecond && Boolean(hueskerProductInfo(v.reinforcementSystem));
+  const ar = isSecond
+    ? { value: 'N/A', numeric: 0, display: 'N/A', note: '', source: 'Form 395K — 2nd layer has no AT' }
+    : hueskerMode
+      ? { value: 'N/A', numeric: 0, display: 'N/A', note: 'HUESKER selected: texture is handled via the HUESKER bond coat; normal AT not applied.', source: 'HUESKER reinforcement — texture handled via bond coat' }
+      : nsw395SurfaceTexture(v, vld);
+  const abaInfo = nsw395Aba(isSecond ? v.nsw395Abs2 : v.nsw395Abs, v.aba);
+  const aba = abaInfo.aba;
+  const ap = isSecond ? 0 : allowanceNum(v.ap);   // ABB, Table 12
+  const ae = isSecond ? { value: 'N/A', numeric: 0, display: 'N/A', note: '' } : nsw395Embedment(v, vld);
+  const finalBinder = round(modifiedBinder + ar.numeric + aba + ap + ae.numeric, 2);
+  const agg = nsw395AggregateSpread(v, v.sealType, ald, vld);
+  const emulsionContent = emulsionBinderContent(v.binder);
+  const emulsionSprayRate = emulsionContent ? finalBinder / emulsionContent : null;
+  const shape = { va: vaUsed, shape: shapeName, level: 'APPLIED', message: `Table 4: ${shapeName} → Va = ${va >= 0 ? '+' : ''}${va}.` };
+  return {
+    v, traffic, shvPct, lhvPct, lvPct, ehvPct,
+    normalDesignTraffic: vld, nominalDesignTraffic: vld, effectiveDesignTraffic: vld,
+    samiMode: false, vf, vfRaw: vfMid, vt, vtRaw: vt, shape, shapeRaw: shape,
+    bf: round(factor, 2), bfRaw: round(factor, 2), samiBfBand: null, adoptedSamiBf: null, samiBfAtBandMin: false, samiBfOutOfBand: false, samiBandRates: null,
+    ar, aba, ap, ae, otherAdjustment, otherRaw: otherAdjustment, ald, designVf, baseBinder, modifiedBinder, finalBinder,
+    emulsionContent, emulsionSprayRate, agg, notes: [],
+    nsw: { vm, vfMid, vfFromReading, shoulder, shapeName, factors, abaInfo, isSecond, isFirstDouble, limits: nsw395VfLimits(vld), preVm: vf + vaUsed + vt + otherAdjustment }
+  };
+}
+
+function build395kNotes(r) {
+  const notes = [];
+  const n = r.nsw;
+  const pre = n.isSecond ? 'Second coat – ' : '';
+  const vld = round(r.traffic.vld, 0);
+  if (!n.isSecond) {
+    notes.push(note('APPLIED', 'TfNSW Form 395K mode', 'SPEC = 395K. Binder and aggregate rates follow TfNSW Form 395K (01/2014) for R106/R107/R111 sprayed sealing. AGPT04K-26 and TN175 rules are not applied; treatment and binder option lists still come from the Part 4K matrix.', 'Form 395K guide notes'));
+  }
+  if (n.shoulder) {
+    notes.push(note('APPLIED', pre + 'Shoulder / median design VF', `Design area is a shoulder/median: Figure 1A/1B note → design voids factor ${r.vf} (${/0\.23/.test(String(r.vf)) ? 'rounded / very cubic aggregate' : 'good quality crushed aggregate'}); Vt and Va not applied.${n.isFirstDouble ? ' Vm still applied for the D/D 1st layer — confirm.' : ''}`, 'Form 395K Figure 1A/1B note'));
+  } else {
+    if (n.vfFromReading) notes.push(note('CHECK', pre + 'Basic voids factor', `Designer chart reading Vf = ${r.vf} used. Figure ${r.traffic.vld <= 500 ? '1A' : '1B'} fitted mid-line at ${vld} v/l/d = ${n.vfMid}.`, `Form 395K Figure ${r.traffic.vld <= 500 ? '1A' : '1B'}`));
+    else notes.push(note('APPLIED', pre + 'Basic voids factor', `Figure ${r.traffic.vld <= 500 ? '1A' : '1B'} mid-line at ${vld} v/l/d → Vf = ${r.vf}. Confirm against the printed chart; the fitted line is accurate to about ±0.003. Enter a chart reading to override.`, `Form 395K Figure ${r.traffic.vld <= 500 ? '1A' : '1B'}`));
+    notes.push(note('APPLIED', pre + 'Traffic effects', `Table 3B: EHV ${round(r.ehvPct,1)}%, ${norm(r.v.gradient).includes('CLIMBING') ? 'climbing lane' : 'flat or downhill'}, ${norm(r.v.braking) === 'YES' ? 'channelised' : 'normal'} → Vt = ${r.vt}. (Overtaking lanes of multi-lane rural roads: +0.01 normal / 0 channelised — use the Other adjustment.)`, 'Form 395K Table 3B'));
+    if (n.preVm > n.limits.bleed || n.preVm < n.limits.strip) {
+      notes.push(note('WARNING', pre + 'Voids factor limits', `Vf + Va + Vt = ${round(n.preVm,3)} is outside the approximate Figure ${r.traffic.vld <= 500 ? '1A' : '1B'} limits (stripping ≈ ${n.limits.strip}, bleeding ≈ ${n.limits.bleed}). The guide notes say the design must not go beyond the dashed lines.`, 'Form 395K guide notes'));
+    }
+  }
+  notes.push(note('APPLIED', pre + 'Aggregate shape', r.shape.message, 'Form 395K Table 4'));
+  if (n.isFirstDouble) notes.push(note('APPLIED', 'Voids modification factor', `Table 5: D/D 1st layer at ${vld} v/l/d → Vm = ${n.vm}. VF1 = (Vf + Va + Vt) × Vm = ${r.designVf} (rounded to 0.01).`, 'Form 395K Table 5'));
+  notes.push(note(n.factors.fallback ? 'CHECK' : 'APPLIED', pre + 'Binder formula', `${n.factors.formula} seal formula used${n.factors.formula !== 'Conventional' ? ` with EF ${n.factors.ef}, PF ${n.factors.pf}` : ''}. ${n.factors.source}.`, n.factors.fallback ? 'Form 395K Tables 6–7 / AGPT04K-26' : 'Form 395K Tables 6–7'));
+  if (n.factors.category === 'Cutback') notes.push(note('CHECK', pre + 'Cutback binder', `${r.v.binder} is not listed in Table 1A. Spread rate uses the C170/C240/C320/M500 row. Remember cutter allowances.`, 'Form 395K Table 1A'));
+  if (!n.isSecond) {
+    if (r.ar.note) notes.push(note(r.ar.level || 'APPLIED', 'Surface texture allowance (AT)', r.ar.note, r.ar.source));
+    const base = nsw395BaseType(r.v.nsw395Surface);
+    if (base === 'UNSEALED' && (r.ap < 0.1 || r.ap > 0.4)) notes.push(note('WARNING', 'Binder absorption by base (ABB)', `ABB = ${r.ap} L/m². Table 12 gives +0.1 to +0.4 L/m² for an unsealed base, from RMS T126.`, 'Form 395K Table 12'));
+    else if (base !== 'UNSEALED' && r.ap !== 0) notes.push(note('CHECK', 'Binder absorption by base (ABB)', `ABB = ${r.ap} L/m². Table 12 gives 0.0 for sealed, resealed, primed or primersealed surfaces.`, 'Form 395K Table 12'));
+    else if (r.ap !== 0) notes.push(note('APPLIED', 'Binder absorption by base (ABB)', `ABB = ${r.ap} L/m² (Table 12 unsealed base range 0.1–0.4, RMS T126).`, 'Form 395K Table 12'));
+    if (r.ae.note) notes.push(note(r.ae.display === 'NOTE' || r.ae.numeric === -0.3 ? 'WARNING' : 'APPLIED', 'Embedment allowance (AE)', r.ae.note, 'Form 395K Figure 2'));
+  }
+  notes.push(note(n.abaInfo.warn ? 'WARNING' : n.abaInfo.fromTable ? 'APPLIED' : 'CHECK', pre + 'Binder absorption by aggregate (ABA)', `${n.abaInfo.note} ABA = ${r.aba} L/m².`, 'Form 395K Table 9'));
+  if (r.agg?.note) {
+    const offGuide = Number.isFinite(r.agg.guideLimit) && r.agg.limit !== r.agg.guideLimit;
+    notes.push(note(offGuide ? 'CHECK' : 'APPLIED', pre + 'Aggregate spread rate', r.agg.note + (offGuide ? ` Guide note would use ${r.agg.guideLimit}/ALD → ${Math.round(Math.floor(r.agg.guideLimit / Math.max(r.ald,0.1)) * r.agg.I)} m²/m³.` : ''), r.agg.source));
+  }
+  if (r.finalBinder > 0) {
+    const r05 = Math.round(r.finalBinder / 0.05) * 0.05;
+    notes.push(note('INFO', pre + 'Design binder rate', `BD = ${r.finalBinder.toFixed(2)} L/m²${Math.abs(r05 - r.finalBinder) > 1e-9 ? ` (${r05.toFixed(2)} if rounded to the nearest 0.05 L/m² for spraying)` : ''}. Allow for cutter and adhesion agent.`, 'Form 395K'));
+  } else {
+    notes.push(note('WARNING', pre + 'Design binder rate', 'Calculated binder rate is zero or negative. Check ALD and inputs.', 'Calculation check'));
+  }
+  if (!Number.isFinite(r.ald) || r.ald <= 0) notes.push(note('WARNING', pre + 'ALD', 'ALD is missing or zero.', 'Form 395K'));
+  if (n.isSecond && r.v.aggregateSize && r.v._firstNominal) {
+    const first = asNum(r.v._firstNominal, NaN), second = nsw395AggNominal(r.v.aggregateSize);
+    if (Number.isFinite(first) && second > first / 2 + 0.5) notes.push(note('CHECK', 'Second layer size', `${second} mm on ${first} mm is larger than the usual half size. The guide notes say the 2nd layer is usually about half the 1st layer nominal size for interlock.`, 'Form 395K guide notes'));
+  }
+  return notes;
+}
+
 function getEffectiveDesignTraffic(normalDesignTraffic, ehvPct, lvPct, shvPct, lhvPct) {
   const nominalDesignTraffic = normalDesignTraffic * (lvPct + 10 * (shvPct + 3 * lhvPct)) / 100;
   const effectiveDesignTraffic = ehvPct > 65 ? nominalDesignTraffic : normalDesignTraffic;
   return { nominalDesignTraffic, effectiveDesignTraffic };
 }
 function calculateCoat(v) {
+  // TfNSW Form 395K is a separate method: route the whole coat through it.
+  if (is395k(v.spec)) return calculateCoat395k(v);
   const shvPct = Math.max(0, asNum(v.shvPct));
   const lhvPct = Math.max(0, asNum(v.lhvPct));
   const hvPct = Math.min(100, shvPct + lhvPct);
@@ -1860,7 +2215,8 @@ function calculate() {
       ballpin: 'N/A',
       aba: allowanceNum(v.aba2),
       ap: 0,
-      otherAdjustment: 0
+      otherAdjustment: 0,
+      _firstNominal: nsw395AggNominal(v.aggregateSize)
     };
     result.second = calculateCoat(secondV);
     result.secondLabel = `Double 2nd Coat / ${secondAgg}`;
@@ -2261,6 +2617,9 @@ function render(e) {
 
   const r = calculate();
   const doubleMode = Boolean(r.second);
+  document.body.classList.toggle('spec-395k', is395k(r.v.spec));
+  setText('vmOut', r.nsw ? round(r.nsw.vm,2).toFixed(2) : '1.00');
+  setText('vmOut2', r.second?.nsw ? round(r.second.nsw.vm,2).toFixed(2) : '');
   document.body.classList.toggle('double-mode', doubleMode);
   setText('primaryColHead', isDoubleFirst(r.v.sealType) ? 'Double 1st Coat' : 'Single');
   setText('aggOneTitle', isDoubleFirst(r.v.sealType) ? 'First coat aggregate' : 'Single seal aggregate');

@@ -581,3 +581,7 @@ details.notes-group[open] > summary{margin-bottom:12px}
   .flags .note-card{box-shadow:none!important;break-inside:avoid}
 }
 .flags.design-notes .actions{position:static!important;background:#fff!important;border-top:1px solid #e2e8f0;margin-top:4px}
+
+/* v68 TfNSW Form 395K mode: show 395K-only inputs, hide flakiness (NSW uses Table 4 shape instead) */
+body:not(.spec-395k) .nsw395-only{display:none!important}
+body.spec-395k .not-395k{display:none!important}
