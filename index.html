@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#1f4e79" />
   <title>Spray Seal Design Calculation</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="style.css?v=67" />
+  <link rel="stylesheet" href="style.css?v=68" />
 </head>
 <body>
   <header class="app-header no-print">
     <div>
-      <p class="eyebrow">AGPT04K-26 / TN175 mobile design tool</p>
+      <p class="eyebrow">AGPT04K-26 / TN175 / TfNSW 395K mobile design tool</p>
       <h1>Spray Seal Design Calculator</h1>
     </div>
     <div class="header-actions">
@@ -165,7 +165,10 @@
                 <div class="agg-title"><b id="aggOneTitle">Single / First coat aggregate</b><em>Designer inputs</em></div>
                 <label><span>mm</span><select name="aggregateSize" data-options="aggregateSize"></select></label>
                 <label><span>ALD</span><input name="aldMirror" type="number" step="0.01" value="5.7" /></label>
-                <label><span>FL Index %</span><input name="flIndex" type="number" step="0.01" value="20" /></label>
+                <label class="not-395k"><span>FL Index %</span><input name="flIndex" type="number" step="0.01" value="20" /></label>
+                <label class="nsw395-only"><span>Shape (395K T4)</span><select name="nsw395Shape"></select></label>
+                <label class="nsw395-only"><span>Absorption %</span><input name="nsw395Abs" type="number" step="0.1" min="0" placeholder="blank = Aba" /></label>
+                <label class="nsw395-only"><span>Table 1A limit</span><select name="nsw395Limit"><option>Auto</option><option>Lower</option><option>Upper</option></select></label>
                 <label class="note-line"><span>Binder used</span><div class="select-note-wrap"><select name="binder" data-options="binder"></select><i class="mini-note-dot is-empty" data-note-for="binder" title="Check design notes"></i></div></label>
               </section>
 
@@ -174,7 +177,10 @@
                 <label><span>Treatment</span><select name="treatment2" data-options="treatment2"></select></label>
                 <label><span>mm</span><select name="aggregateSize2" data-options="aggregateSize2"></select></label>
                 <label><span>ALD</span><input name="aldMirror2" type="number" step="0.01" value="3.8" /></label>
-                <label><span>FL Index %</span><input name="flIndex2" type="number" step="0.01" value="20" /></label>
+                <label class="not-395k"><span>FL Index %</span><input name="flIndex2" type="number" step="0.01" value="20" /></label>
+                <label class="nsw395-only"><span>Shape (395K T4)</span><select name="nsw395Shape2"></select></label>
+                <label class="nsw395-only"><span>Absorption %</span><input name="nsw395Abs2" type="number" step="0.1" min="0" placeholder="blank = Aba" /></label>
+                <label class="nsw395-only"><span>Table 1A limit</span><select name="nsw395Limit2"><option>Auto</option><option>Lower</option><option>Upper</option></select></label>
                 <label class="note-line"><span>Binder used</span><div class="select-note-wrap"><select name="binder2" data-options="binder2"></select><i class="mini-note-dot is-empty" data-note-for="binder2" title="Check design notes"></i></div></label>
               </section>
             </div>
@@ -182,8 +188,11 @@
             <div class="context-grid">
               <div class="context-card">
                 <div class="context-title">Existing Surface</div>
-                <label><span>SURFACE</span><select name="surfaceType" data-options="surfaceType"></select></label>
-                <label><span>Texture</span><input name="surfaceTexture" type="number" step="0.01" value="1.9" /></label>
+                <label class="not-395k"><span>SURFACE</span><select name="surfaceType" data-options="surfaceType"></select></label>
+                <label class="nsw395-only"><span>SURFACE (395K)</span><select name="nsw395Surface"></select></label>
+                <label class="nsw395-only"><span>SEAL / RESEAL</span><select name="nsw395SealOrReseal"><option>Seal</option><option>Reseal</option></select></label>
+                <label class="nsw395-only"><span>BASE AT L/m²</span><input name="nsw395UnsealedAt" type="number" step="0.05" value="0.1" title="Designer AT for an unsealed base — Form 395K has no table" /></label>
+                <label><span>Texture<i class="nsw395-only"> T240</i></span><input name="surfaceTexture" type="number" step="0.01" value="1.9" /></label>
                 <label><span>BALLPIN</span><input name="ballpin" type="number" step="0.01" value="1" /></label>
               </div>
               <div class="context-card">
@@ -209,10 +218,12 @@
             <div class="calc-head double-col-head"><span>Item</span><b>Symbol</b><b id="primaryColHead">Selected coat</b><b class="second-val" id="secondColHead">Second coat</b></div>
             <div class="r"><span class="label-note-anchor">Design traffic<i class="mini-note-dot is-empty" data-note-for="designTraffic" title="Check design notes"></i></span><b>v/l/d</b><output id="designTrafficOut">0</output><output class="second-val" id="designTrafficOut2">0</output></div>
             <div class="r"><span>Basic voids factor</span><b>Vf</b><output id="vfOut">0.000</output><output class="second-val" id="vfOut2">0.000</output></div>
+            <div class="r input-r nsw395-only"><span>Vf chart reading (395K, blank = mid-line)</span><b>Vf read</b><div class="value-cell"><input name="nsw395VfRead" type="number" step="0.001" min="0" placeholder="mid-line" /></div><output class="second-val" id="vfReadOut2">same</output></div>
             <div class="section-title">Adjustments:</div>
             <div class="r"><span>Aggregate shape</span><b>Va</b><output id="vaOut">0</output><output class="second-val" id="vaOut2">0</output></div>
             <div class="r"><span>Traffic effects</span><b>Vt</b><output id="vtOut">0</output><output class="second-val" id="vtOut2">0</output></div>
             <div class="r input-r"><span>Other</span><b>Vo L/m²</b><div class="value-cell"><input name="otherAdjustment" type="number" step="0.01" value="0" /></div><output class="second-val" id="otherAdjustmentOut2">0</output></div>
+            <div class="r nsw395-only"><span>Voids modifier (D/D 1st layer)</span><b>Vm</b><output id="vmOut">1.00</output><output class="second-val" id="vmOut2"></output></div>
             <div class="r"><span>Design voids factor</span><b>VF</b><output id="designVfOut">0.000</output><output class="second-val" id="designVfOut2">0.000</output></div>
             <div class="r"><span>ALD of aggregate</span><b>ALD mm</b><output id="aldCalcOut">0.0</output><output class="second-val" id="aldCalcOut2">0.0</output></div>
             <div class="r"><span>Basic binder rate</span><b>Bb L/m²</b><output id="baseBinderOut">0.00</output><output class="second-val" id="baseBinderOut2">0.00</output></div>
@@ -265,6 +276,6 @@
   </main>
 
   <footer class="no-print">Spray Seal Design Calculator · Calculation + Lookups conversion · Validate against Excel before real design use.</footer>
-  <script src="app.js?v=67" type="module"></script>
+  <script src="app.js?v=68" type="module"></script>
 </body>
 </html>
